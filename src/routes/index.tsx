@@ -74,11 +74,11 @@ function Dashboard() {
             transition={{ duration: 0.35, ease: "easeOut" }}
             className="relative flex w-full max-w-[240px] flex-col items-center"
           >
-            <div className="grid aspect-square w-full place-items-center overflow-hidden rounded-[2rem] bg-card/70 shadow-[var(--shadow-soft)] ring-2 ring-primary/30">
+            <div className="grid aspect-square w-full place-items-center overflow-hidden">
               <img
                 src={companion.url}
                 alt={companion.name}
-                className="h-full w-full object-contain p-4"
+                className="h-full w-full object-contain drop-shadow-[0_18px_40px_color-mix(in_oklab,var(--phase)_35%,transparent)]"
               />
             </div>
             <h2 className="relative mt-4 text-center text-xl font-extrabold tracking-tight text-foreground">
