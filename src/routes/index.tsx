@@ -140,7 +140,7 @@ function Dashboard() {
           </section>
         )}
 
-        {/* Hero — dynamic Luna + companion identity */}
+        {/* Hero — companion-led feeling check-in (restored) */}
         <section className="relative mt-4 overflow-hidden rounded-4xl glass-panel px-5 pb-6 pt-5">
           <div className="pointer-events-none absolute inset-0 ambient-glow" aria-hidden />
 
@@ -154,26 +154,57 @@ function Dashboard() {
                 <span className="text-phase-deep">{companion.name}</span>?
               </h1>
             </div>
-            <div className="flex shrink-0 flex-col items-end gap-2">
-              <span className="rounded-full bg-accent px-3 py-1.5 text-[11px] font-bold text-accent-foreground">
-                Day {cycleDay}
-                <span className="mx-1 opacity-50">·</span>
-                {PHASE_META[phase].label}
-              </span>
-              <img
-                src={companion.url}
-                alt={companion.name}
-                className="h-10 w-10 object-contain"
-              />
-            </div>
+            <span className="shrink-0 rounded-full bg-accent px-3 py-1.5 text-[11px] font-bold text-accent-foreground">
+              Day {cycleDay}
+              <span className="mx-1 opacity-50">·</span>
+              {PHASE_META[phase].label}
+            </span>
           </div>
 
-          <div className="relative mt-4 flex flex-col items-center">
+          <motion.div
+            key={companion.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            className="relative mt-5 flex flex-col items-center"
+          >
+            <img
+              src={companion.url}
+              alt={companion.name}
+              className="h-44 w-44 object-contain drop-shadow-[0_18px_40px_color-mix(in_oklab,var(--phase)_35%,transparent)] sm:h-52 sm:w-52"
+            />
+            <p className="mt-3 text-center text-sm font-bold text-foreground">
+              {companion.mood}
+            </p>
+            <p className="mt-1 max-w-[22rem] text-center text-sm leading-relaxed text-muted-foreground">
+              {companion.description}
+            </p>
+          </motion.div>
+        </section>
+
+        {/* Body-state Luna — keeps concept interactions without replacing companion */}
+        <section className="relative mt-4 overflow-hidden rounded-4xl glass-panel px-5 pb-5 pt-4">
+          <div className="relative flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold">Nora’s body signal</h2>
+              <p className="text-xs text-muted-foreground">
+                Drag or slide energy — Endo Belly inflates Luna; recovery softens her.
+              </p>
+            </div>
+            {resilienceUnlocked && (
+              <p className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-200/40 px-2.5 py-1 text-[10px] font-bold text-amber-900">
+                <Sparkles className="h-3 w-3" />
+                Resilience
+              </p>
+            )}
+          </div>
+
+          <div className="relative mt-2 flex flex-col items-center">
             <Luna
               phase={recoveryMode ? "follicular" : phase}
               energy={energy}
               symptoms={symptoms}
-              size={240}
+              size={200}
               resilience={resilienceUnlocked}
               recovery={recoveryMode}
               energyInteractive
@@ -190,22 +221,13 @@ function Dashboard() {
                   ? "Post-op rest mode · soft cloud support"
                   : PHASE_META[phase].blurb}
             </p>
-            {resilienceUnlocked && (
-              <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-200/40 px-3 py-1 text-[11px] font-bold text-amber-900">
-                <Sparkles className="h-3 w-3" />
-                Resilience glow earned from your 3-month pattern
-              </p>
-            )}
           </div>
 
-          <div className="relative mt-4">
+          <div className="relative mt-3">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="text-sm font-bold">Energy with Nora</h2>
+              <h3 className="text-sm font-bold">Energy</h3>
               <span className="text-xs font-bold text-foreground">{energy}%</span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Slide or drag Nora — Endo Belly expands her; calm makes her softer.
-            </p>
             <Slider
               value={[energy]}
               min={0}
