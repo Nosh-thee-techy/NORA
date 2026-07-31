@@ -32,7 +32,7 @@ export function SosScreen({ open, onClose }: { open: boolean; onClose: () => voi
         i = (i + 1) % BREATH_STEPS.length;
         setStep(i);
         run();
-      }, BREATH_STEPS[i].seconds * 1000);
+      }, (BREATH_STEPS[i]?.seconds ?? 4) * 1000);
     };
     run();
     return () => clearTimeout(timer);
@@ -73,7 +73,7 @@ export function SosScreen({ open, onClose }: { open: boolean; onClose: () => voi
               animate={{ opacity: 1, y: 0 }}
               className="mt-2 text-2xl font-extrabold"
             >
-              {BREATH_STEPS[step].label}
+              {BREATH_STEPS[step]?.label}
             </motion.p>
             <p className="text-sm text-muted-foreground">
               4-7-8 rhythm • follow Luna's ember. You are safe.
