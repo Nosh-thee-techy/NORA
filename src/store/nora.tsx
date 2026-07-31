@@ -14,6 +14,12 @@ import {
   type Phase,
   type SymptomId,
 } from "@/lib/cycle";
+import {
+  currentMonthKey,
+  evaluateEndoRisk,
+  upsertMonthLog,
+  type MonthLog,
+} from "@/lib/forecast";
 
 export type PainPoint = {
   id: string;
@@ -34,7 +40,6 @@ export type OnboardingProfile = {
   dailyCheckin: boolean;
   emergencyContact: string;
   avatarId: string;
-  /** Why the user chose this companion during onboarding */
   avatarReasons: string[];
 };
 
@@ -45,9 +50,12 @@ type NoraState = {
   painPoints: PainPoint[];
   onboarded: boolean;
   profile: OnboardingProfile;
+  recoveryMode: boolean;
+  monthLogs: MonthLog[];
+  resilienceUnlocked: boolean;
 };
 
-const STORAGE_KEY = "nora-bloom-state-v1";
+const STORAGE_KEY = "nora-bloom-state-v2";
 
 export const DEFAULT_PROFILE: OnboardingProfile = {
   lastPeriodStart: null,
@@ -69,6 +77,9 @@ const DEFAULT_STATE: NoraState = {
   painPoints: [],
   onboarded: false,
   profile: DEFAULT_PROFILE,
+  recoveryMode: false,
+  monthLogs: [],
+  resilienceUnlocked: false,
 };
 
 const SYMPTOM_MAP: Record<string, SymptomId> = {
@@ -89,6 +100,10 @@ export function cycleDayFromProfile(profile: OnboardingProfile): number {
   return cycleDayFromLastPeriod(profile);
 }
 
+function withRisk(state: NoraState): NoraState {
+  const risk = evaluateEndoRisk(state.monthLogs);
+  return { ...state, resilienceUnlocked: risk.resilienceUnlocked || state.resilienceUnlocked };
+}
 
 type Ctx = NoraState & {
   phase: Phase;
@@ -100,6 +115,12 @@ type Ctx = NoraState & {
   removePainPoint: (id: string) => void;
   completeOnboarding: (profile: OnboardingProfile, opts?: { energy?: number }) => void;
   resetOnboarding: () => void;
+  setRecoveryMode: (on: boolean) => void;
+  logTodaySignals: () => void;
+  /** Intentionally credit this calendar month toward the 3-month resilience path */
+  recordPatternMonth: () => void;
+  endoRiskReason: string;
+  patternMonthsLogged: number;
   hydrated: boolean;
 };
 
@@ -111,17 +132,22 @@ export function NoraProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem("nora-bloom-state-v1");
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<NoraState>;
-        setState({
-          ...DEFAULT_STATE,
-          ...parsed,
-          profile: { ...DEFAULT_PROFILE, ...(parsed.profile ?? {}) },
-        });
+        setState(
+          withRisk({
+            ...DEFAULT_STATE,
+            ...parsed,
+            profile: { ...DEFAULT_PROFILE, ...(parsed.profile ?? {}) },
+            monthLogs: parsed.monthLogs ?? [],
+            recoveryMode: !!parsed.recoveryMode,
+            resilienceUnlocked: !!parsed.resilienceUnlocked,
+          }),
+        );
       }
     } catch {
-      /* offline-safe: fall back to defaults */
+      /* offline-safe */
     }
     setHydrated(true);
   }, []);
@@ -153,13 +179,21 @@ export function NoraProvider({ children }: { children: ReactNode }) {
         }),
       setEnergy: (v) => setState((s) => ({ ...s, energy: v })),
       toggleSymptom: (id) =>
-        setState((s) => ({
-          ...s,
-          symptoms: s.symptoms.includes(id)
+        setState((s) => {
+          const symptoms = s.symptoms.includes(id)
             ? s.symptoms.filter((x) => x !== id)
-            : [...s.symptoms, id],
-        })),
-      addPainPoint: (p) => setState((s) => ({ ...s, painPoints: [...s.painPoints, p] })),
+            : [...s.symptoms, id];
+          return { ...s, symptoms };
+        }),
+      addPainPoint: (p) =>
+        setState((s) => {
+          const painPoints = [...s.painPoints, p];
+          const monthLogs = upsertMonthLog(s.monthLogs, {
+            month: currentMonthKey(),
+            peakPain: Math.max(...painPoints.map((x) => x.intensity), p.intensity),
+          });
+          return withRisk({ ...s, painPoints, monthLogs });
+        }),
       updatePainPoint: (id, patch) =>
         setState((s) => ({
           ...s,
@@ -177,6 +211,44 @@ export function NoraProvider({ children }: { children: ReactNode }) {
           symptoms: mapProfileSymptoms(profile.profileSymptoms),
         })),
       resetOnboarding: () => setState((s) => ({ ...s, onboarded: false })),
+      setRecoveryMode: (on) => setState((s) => ({ ...s, recoveryMode: on })),
+      logTodaySignals: () =>
+        setState((s) => {
+          const peakFromPain = s.painPoints.reduce((m, p) => Math.max(m, p.intensity), 0);
+          const peakPain = Math.max(
+            peakFromPain,
+            s.symptoms.includes("cramps") ? 7 : 0,
+            s.symptoms.includes("leg-pain") ? 7 : 0,
+          );
+          const monthLogs = upsertMonthLog(s.monthLogs, {
+            month: currentMonthKey(),
+            peakPain,
+            endoBellyDays: s.symptoms.includes("endo-belly") ? 1 : 0,
+            heavyFlow: s.symptoms.includes("heavy-flow"),
+            missedFunction: peakPain >= 8,
+          });
+          return withRisk({ ...s, monthLogs });
+        }),
+      recordPatternMonth: () =>
+        setState((s) => {
+          const peakFromPain = s.painPoints.reduce((m, p) => Math.max(m, p.intensity), 0);
+          const peakPain = Math.max(
+            peakFromPain,
+            s.symptoms.includes("cramps") ? 8 : 0,
+            s.symptoms.includes("leg-pain") ? 7 : 0,
+            7,
+          );
+          const monthLogs = upsertMonthLog(s.monthLogs, {
+            month: currentMonthKey(),
+            peakPain,
+            endoBellyDays: 3,
+            heavyFlow: true,
+            missedFunction: true,
+          });
+          return withRisk({ ...s, monthLogs });
+        }),
+      endoRiskReason: evaluateEndoRisk(state.monthLogs).reason,
+      patternMonthsLogged: state.monthLogs.length,
     }),
     [state, hydrated, cycleLen],
   );
