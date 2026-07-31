@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { MessageCircle, Stethoscope, ChevronLeft, ChevronRight } from "lucide-react";
-import { Luna } from "@/components/Luna";
 import { avatarById } from "@/lib/avatars";
 import { TopNav } from "@/components/TopNav";
 import { PainMapper } from "@/components/PainMapper";
@@ -50,7 +49,6 @@ function Dashboard() {
   const navigate = useNavigate();
   const [mapper, setMapper] = useState(false);
   const [sos, setSos] = useState(false);
-  const [wobbleNote, setWobbleNote] = useState(false);
 
   const cycleWindow = useMemo(() => buildCycleWindow(profile), [profile]);
 
@@ -67,42 +65,39 @@ function Dashboard() {
       <TopNav onSos={() => setSos(true)} />
 
       <main className="mx-auto max-w-xl px-4">
-        {/* Hero */}
+        {/* Hero — emotion companion is the feeling, not the Luna orb */}
         <section className="relative mt-4 flex flex-col items-center overflow-hidden rounded-4xl glass-panel px-4 pt-6 pb-7">
           <div className="pointer-events-none absolute inset-0 ambient-glow" aria-hidden />
-          <Luna
-            phase={phase}
-            energy={energy}
-            symptoms={symptoms}
-            onPoke={() => {
-              setWobbleNote(true);
-              setTimeout(() => setWobbleNote(false), 1800);
-            }}
-          />
-          <motion.p
-            key={phase + String(wobbleNote)}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative -mt-2 text-center text-sm font-semibold text-muted-foreground"
+          <motion.div
+            key={companion.id}
+            initial={{ opacity: 0, scale: 0.94, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            className="relative flex w-full max-w-[240px] flex-col items-center"
           >
-            {wobbleNote ? "Luna wobbles softly. I'm right here. 💛" : PHASE_META[phase].blurb}
-          </motion.p>
-          <h1 className="relative mt-3 text-center text-2xl font-extrabold tracking-tight">
+            <div className="grid aspect-square w-full place-items-center overflow-hidden rounded-[2rem] bg-card/70 shadow-[var(--shadow-soft)] ring-2 ring-primary/30">
+              <img
+                src={companion.url}
+                alt={companion.name}
+                className="h-full w-full object-contain p-4"
+              />
+            </div>
+            <h2 className="relative mt-4 text-center text-xl font-extrabold tracking-tight text-foreground">
+              {companion.name}
+            </h2>
+            <p className="relative mt-1 text-center text-xs font-bold uppercase tracking-wide text-phase-deep">
+              {companion.mood}
+            </p>
+            <p className="relative mt-2 max-w-sm text-center text-sm leading-relaxed text-muted-foreground">
+              {companion.description}
+            </p>
+          </motion.div>
+          <p className="relative mt-4 text-center text-xs font-semibold text-muted-foreground">
+            {PHASE_META[phase].label} · Day {cycleDay}
+          </p>
+          <h1 className="relative mt-2 text-center text-2xl font-extrabold tracking-tight">
             How are you feeling today?
           </h1>
-          <div className="relative mt-3 flex items-center gap-3 rounded-full bg-card/70 px-3 py-2">
-            <img
-              src={companion.url}
-              alt={companion.name}
-              className="h-10 w-10 rounded-full object-contain"
-            />
-            <span className="text-xs font-bold text-foreground">
-              {companion.name}
-              <span className="ml-1 font-semibold text-muted-foreground">
-                · {companion.mood}
-              </span>
-            </span>
-          </div>
         </section>
 
         {/* Cycle calendar — anchored to last period start, not month start */}
@@ -187,7 +182,7 @@ function Dashboard() {
         <section className="mt-4 rounded-4xl glass-panel p-5">
           <h2 className="text-sm font-bold">3-second check-in</h2>
           <p className="text-xs text-muted-foreground">
-            Slide to tune Luna's energy — she changes live.
+            Slide to tune how {companion.name} holds space with you today.
           </p>
           <Slider
             value={[energy]}
