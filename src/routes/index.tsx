@@ -51,6 +51,23 @@ function Dashboard() {
 
   const cycleWindow = useMemo(() => buildCycleWindow(profile), [profile]);
 
+  const threeDayStrip = useMemo(() => {
+    const days = cycleWindow.days;
+    if (days.length === 0) return [];
+    const idx = Math.max(
+      0,
+      days.findIndex((d) => d.cycleDay === cycleDay),
+    );
+    const prev = days[(idx - 1 + days.length) % days.length]!;
+    const current = days[idx]!;
+    const next = days[(idx + 1) % days.length]!;
+    return [
+      { cell: prev, label: "Previous" },
+      { cell: current, label: current.isToday ? "Today" : "Selected" },
+      { cell: next, label: "Next" },
+    ];
+  }, [cycleWindow.days, cycleDay]);
+
   useEffect(() => {
     if (hydrated && !onboarded) navigate({ to: "/onboarding", replace: true });
   }, [hydrated, onboarded, navigate]);
@@ -99,15 +116,15 @@ function Dashboard() {
           </h1>
         </section>
 
-        {/* Cycle calendar — anchored to last period start, not month start */}
+        {/* Cycle calendar — only previous, today, next */}
         <section className="mt-4 rounded-4xl glass-panel p-4">
           <div className="flex items-center justify-between gap-2">
             <div>
               <h2 className="text-sm font-bold">Cycle calendar</h2>
               <p className="text-[11px] font-semibold text-muted-foreground">
-                Aligned to your last period
-                {cycleWindow.cycleStart
-                  ? ` · started ${cycleWindow.cycleStart.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+                Day {cycleDay} of {cycleWindow.cycleLength}
+                {cycleWindow.nextPeriodStart
+                  ? ` · next period ~ ${cycleWindow.nextPeriodStart.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
                   : ""}
               </p>
             </div>
@@ -129,52 +146,36 @@ function Dashboard() {
             </div>
           </div>
 
-          <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
-            {cycleWindow.days.map((cell) => {
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {threeDayStrip.map(({ cell, label }) => {
               const active = cell.cycleDay === cycleDay;
-              const dayNum = cell.date.getDate();
               return (
                 <button
-                  key={`${cell.cycleDay}-${dayNum}`}
+                  key={`${label}-${cell.cycleDay}`}
                   data-phase={cell.phase}
                   onClick={() => setCycleDay(cell.cycleDay)}
-                  title={`Cycle day ${cell.cycleDay} · ${cell.date.toLocaleDateString()}`}
-                  className={`flex h-12 w-10 shrink-0 flex-col items-center justify-center rounded-2xl text-[10px] font-bold transition-transform ${
+                  title={`${label} · ${cell.date.toLocaleDateString()}`}
+                  className={`flex flex-col items-center justify-center rounded-3xl px-2 py-3 transition-transform ${
                     active
-                      ? "phase-gradient text-primary-foreground scale-110"
+                      ? "phase-gradient scale-[1.03] text-primary-foreground shadow-[var(--shadow-soft)]"
                       : cell.isPeriod
-                        ? "bg-menstrual/25 text-foreground ring-1 ring-menstrual/40"
-                        : "bg-accent text-accent-foreground"
+                        ? "bg-menstrual/20 text-foreground ring-1 ring-menstrual/35"
+                        : "bg-accent/80 text-accent-foreground"
                   }`}
                 >
-                  <span className="text-[9px] font-semibold opacity-80">
-                    {cell.date.toLocaleDateString(undefined, { weekday: "narrow" })}
+                  <span className="text-[10px] font-bold uppercase tracking-wide opacity-80">
+                    {label}
                   </span>
-                  <span className="text-xs">{dayNum}</span>
-                  {cell.isToday && (
-                    <span className="mt-0.5 h-1 w-1 rounded-full bg-current" />
-                  )}
+                  <span className="mt-1 text-2xl font-extrabold leading-none">
+                    {cell.date.getDate()}
+                  </span>
+                  <span className="mt-1 text-[10px] font-semibold opacity-80">
+                    {cell.date.toLocaleDateString(undefined, { weekday: "short" })}
+                  </span>
                 </button>
               );
             })}
           </div>
-
-          <p className="mt-3 text-[11px] font-semibold leading-relaxed text-muted-foreground">
-            {cycleWindow.insight}
-          </p>
-          {cycleWindow.nextPeriodStart && (
-            <p className="mt-1 text-[11px] font-bold text-phase-deep">
-              Next period expected around{" "}
-              {cycleWindow.nextPeriodStart.toLocaleDateString(undefined, {
-                month: "long",
-                day: "numeric",
-              })}
-              {profile.periodLength
-                ? ` for about ${profile.periodLength} day${profile.periodLength === 1 ? "" : "s"}`
-                : ""}
-              .
-            </p>
-          )}
         </section>
 
         {/* Check-in slider */}
