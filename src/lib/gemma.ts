@@ -1,5 +1,5 @@
-export const GEMMA_ENDPOINT = "/api/chat";
-export const GEMMA_MODEL = "gemma:2b";
+export { GEMMA_ENDPOINT, GEMMA_MODEL } from "@/lib/ollama";
+import { GEMMA_ENDPOINT, GEMMA_MODEL } from "@/lib/ollama";
 
 export type ChatRole = "user" | "assistant" | "system";
 
