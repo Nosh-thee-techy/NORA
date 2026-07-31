@@ -90,12 +90,8 @@ export function Luna({
       >
         <defs>
           <radialGradient id={fillId} cx="42%" cy="34%">
-            <stop
-              offset="0%"
-              stopColor="color-mix(in oklab, var(--phase) 30%, white)"
-              stopOpacity="0.98"
-            />
-            <stop offset="65%" stopColor="var(--phase)" stopOpacity="0.9" />
+            <stop offset="0%" stopColor="white" stopOpacity="0.55" />
+            <stop offset="55%" stopColor="var(--phase)" stopOpacity="0.95" />
             <stop offset="100%" stopColor="var(--phase-deep)" stopOpacity="0.95" />
           </radialGradient>
           <filter id={blurId} x="-40%" y="-40%" width="180%" height="180%">
