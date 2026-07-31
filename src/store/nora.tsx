@@ -19,6 +19,7 @@ import {
 import {
   currentMonthKey,
   evaluateEndoRisk,
+  nextMonthToCredit,
   upsertMonthLog,
   type MonthLog,
 } from "@/lib/forecast";
@@ -178,7 +179,8 @@ type Ctx = NoraState & {
   resetOnboarding: () => void;
   setRecoveryMode: (on: boolean) => void;
   logTodaySignals: () => void;
-  recordPatternMonth: () => void;
+  /** Credit the next month toward the 3-month resilience path; returns credited month key */
+  recordPatternMonth: () => string;
   endoRiskReason: string;
   patternMonthsLogged: number;
   hydrated: boolean;
@@ -328,16 +330,18 @@ export function NoraProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const recordPatternMonth = useCallback(() => {
+    let credited = currentMonthKey();
     setState((s) => {
+      credited = nextMonthToCredit(s.monthLogs);
       const peakFromPain = s.painPoints.reduce((m, p) => Math.max(m, p.intensity), 0);
       const peakPain = Math.max(
         peakFromPain,
         s.symptoms.includes("cramps") ? 8 : 0,
         s.symptoms.includes("leg-pain") ? 7 : 0,
-        7,
+        8,
       );
       const monthLogs = upsertMonthLog(s.monthLogs, {
-        month: currentMonthKey(),
+        month: credited,
         peakPain,
         endoBellyDays: 3,
         heavyFlow: true,
@@ -345,6 +349,7 @@ export function NoraProvider({ children }: { children: ReactNode }) {
       });
       return withRisk({ ...s, monthLogs });
     });
+    return credited;
   }, []);
 
   const value = useMemo<Ctx>(
