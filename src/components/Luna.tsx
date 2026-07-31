@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import type { Phase, SymptomId } from "@/lib/cycle";
 
 type LunaProps = {
@@ -41,6 +41,9 @@ export function Luna({
   sos = false,
   onPoke,
 }: LunaProps) {
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
+  const fillId = `luna-fill-${uid}`;
+  const blurId = `luna-blur-${uid}`;
   const [wobble, setWobble] = useState(0);
   const bloated = symptoms.includes("endo-belly");
   const inPain = symptoms.includes("cramps") || symptoms.includes("leg-pain");
@@ -86,7 +89,7 @@ export function Luna({
         transition={{ duration: 0.7, ease: "easeOut" }}
       >
         <defs>
-          <radialGradient id="luna-fill" cx="42%" cy="34%">
+          <radialGradient id={fillId} cx="42%" cy="34%">
             <stop
               offset="0%"
               stopColor="color-mix(in oklab, var(--phase) 30%, white)"
@@ -95,20 +98,20 @@ export function Luna({
             <stop offset="65%" stopColor="var(--phase)" stopOpacity="0.9" />
             <stop offset="100%" stopColor="var(--phase-deep)" stopOpacity="0.95" />
           </radialGradient>
-          <filter id="luna-blur" x="-40%" y="-40%" width="180%" height="180%">
+          <filter id={blurId} x="-40%" y="-40%" width="180%" height="180%">
             <feGaussianBlur stdDeviation="6" />
           </filter>
         </defs>
 
         <path
           d={SHAPES[phase]}
-          fill="url(#luna-fill)"
-          filter="url(#luna-blur)"
+          fill={`url(#${fillId})`}
+          filter={`url(#${blurId})`}
           opacity={0.55}
         />
         <motion.path
           d={SHAPES[phase]}
-          fill="url(#luna-fill)"
+          fill={`url(#${fillId})`}
           animate={{ scale: sos ? [1, 1.06, 1.06, 1] : [1, 1.03, 1] }}
           style={{ transformOrigin: "100px 100px" }}
           transition={{ duration: pulseDuration, repeat: Infinity, ease: "easeInOut" }}
