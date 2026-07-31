@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { MessageCircle, Stethoscope, ChevronLeft, ChevronRight } from "lucide-react";
 import { Luna } from "@/components/Luna";
+import { avatarById } from "@/lib/avatars";
 import { TopNav } from "@/components/TopNav";
 import { PainMapper } from "@/components/PainMapper";
 import { SosScreen } from "@/components/SosScreen";
@@ -82,6 +83,19 @@ function Dashboard() {
           <h1 className="relative mt-3 text-center text-2xl font-extrabold tracking-tight">
             How are you feeling today, Sarah?
           </h1>
+          <div className="relative mt-3 flex items-center gap-3 rounded-full bg-card/70 px-3 py-2">
+            <img
+              src={companion.url}
+              alt={companion.name}
+              className="h-10 w-10 rounded-full object-contain"
+            />
+            <span className="text-xs font-bold text-foreground">
+              {companion.name}
+              <span className="ml-1 font-semibold text-muted-foreground">
+                · {companion.mood}
+              </span>
+            </span>
+          </div>
         </section>
 
         {/* Cycle calendar strip */}
