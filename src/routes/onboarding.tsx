@@ -22,6 +22,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useNora, DEFAULT_PROFILE, type OnboardingProfile } from "@/store/nora";
 import type { Phase } from "@/lib/cycle";
+import { AVATARS } from "@/lib/avatars";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/onboarding")({
@@ -180,7 +181,11 @@ function Onboarding() {
             className="flex flex-1 flex-col"
           >
             {step === 0 && (
-              <StepWelcome onStart={() => go(1)} />
+              <StepWelcome
+                avatarId={profile.avatarId}
+                onPick={(id) => patch({ avatarId: id })}
+                onStart={() => go(1)}
+              />
             )}
 
             {step === 1 && (
@@ -208,24 +213,79 @@ function Onboarding() {
 
 /* ---------------- Step 1 ---------------- */
 
-function StepWelcome({ onStart }: { onStart: () => void }) {
+function StepWelcome({
+  avatarId,
+  onPick,
+  onStart,
+}: {
+  avatarId: string;
+  onPick: (id: string) => void;
+  onStart: () => void;
+}) {
   return (
     <div className="flex flex-1 flex-col items-center">
       <motion.div
-        className="mt-6"
+        className="mt-4"
         animate={{ y: [0, -12, 0] }}
         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
       >
-        <Luna phase="follicular" energy={70} symptoms={[]} size={230} />
+        <Luna phase="follicular" energy={70} symptoms={[]} size={170} />
       </motion.div>
 
-      <h1 className="mt-2 text-center text-3xl font-extrabold tracking-tight text-foreground">
+      <h1 className="mt-1 text-center text-3xl font-extrabold tracking-tight text-foreground">
         Meet Bloom—Your Cycle &amp; Body Companion.
       </h1>
       <p className="mt-3 text-center text-sm leading-relaxed text-muted-foreground">
         A safe, private space that listens to your body, validates your pain, and grows
         with you every single month.
       </p>
+
+      <div className="mt-6 w-full">
+        <p className="text-center text-sm font-bold text-foreground">
+          Pick the companion that feels like you today
+        </p>
+        <div className="mt-3 grid grid-cols-4 gap-2.5">
+          {AVATARS.map((a) => {
+            const active = a.id === avatarId;
+            return (
+              <button
+                key={a.id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => onPick(a.id)}
+                className={cn(
+                  "group flex flex-col items-center gap-1 rounded-2xl border p-2 transition-all",
+                  active
+                    ? "border-transparent bg-accent shadow-[var(--shadow-soft)]"
+                    : "border-border bg-card hover:bg-accent/40",
+                )}
+              >
+                <span
+                  className={cn(
+                    "relative grid aspect-square w-full place-items-center overflow-hidden rounded-xl bg-muted",
+                    active && "ring-2 ring-primary",
+                  )}
+                >
+                  <img
+                    src={a.url}
+                    alt={a.name}
+                    loading="lazy"
+                    className="h-full w-full object-contain"
+                  />
+                  {active && (
+                    <span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full phase-gradient text-primary-foreground">
+                      <Check className="h-2.5 w-2.5" />
+                    </span>
+                  )}
+                </span>
+                <span className="text-[10px] font-bold leading-tight text-foreground">
+                  {a.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <span className="mt-5 inline-flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-xs font-bold text-accent-foreground">
         <ShieldCheck className="h-4 w-4" />
