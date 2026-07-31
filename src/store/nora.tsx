@@ -122,6 +122,16 @@ export function NoraProvider({ children }: { children: ReactNode }) {
         })),
       removePainPoint: (id) =>
         setState((s) => ({ ...s, painPoints: s.painPoints.filter((p) => p.id !== id) })),
+      completeOnboarding: (profile) =>
+        setState((s) => ({
+          ...s,
+          onboarded: true,
+          profile,
+          cycleDay: cycleDayFromProfile(profile),
+          symptoms: mapProfileSymptoms(profile.profileSymptoms),
+        })),
+      resetOnboarding: () => setState((s) => ({ ...s, onboarded: false })),
+
     }),
     [state, hydrated],
   );
