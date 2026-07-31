@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Check, Flame, Thermometer, Zap, Droplets } from "lucide-react";
-import { Luna } from "@/components/Luna";
 import { useNora } from "@/store/nora";
+import { avatarById } from "@/lib/avatars";
 
 const BREATH_STEPS = [
   { label: "Breathe in", seconds: 4 },
@@ -17,7 +17,8 @@ const CHECKS = [
 ];
 
 export function SosScreen({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { energy, symptoms } = useNora();
+  const { profile } = useNora();
+  const companion = avatarById(profile.avatarId);
   const [step, setStep] = useState(0);
   const [flags, setFlags] = useState<string[]>([]);
   const [poses, setPoses] = useState(false);
@@ -38,12 +39,17 @@ export function SosScreen({ open, onClose }: { open: boolean; onClose: () => voi
     return () => clearTimeout(timer);
   }, [open]);
 
+  const breathScale =
+    step === 0 ? [1, 1.12] : step === 1 ? [1.12, 1.12] : [1.12, 0.94];
+  const breathDuration = BREATH_STEPS[step]?.seconds ?? 4;
+
   return (
     <AnimatePresence>
       {open && (
         <motion.div
           data-mode="sos"
           data-phase="menstrual"
+          data-avatar={profile.avatarId}
           className="fixed inset-0 z-[60] overflow-y-auto bg-background px-5 py-6 text-foreground"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -63,8 +69,21 @@ export function SosScreen({ open, onClose }: { open: boolean; onClose: () => voi
               </button>
             </div>
 
-            <div className="mt-6">
-              <Luna phase="menstrual" energy={energy} symptoms={symptoms} size={280} sos />
+            <div className="relative mt-6 grid place-items-center">
+              <motion.div
+                aria-hidden
+                className="absolute h-64 w-64 rounded-full bg-destructive/25 blur-3xl"
+                animate={{ opacity: [0.35, 0.7, 0.35], scale: [0.9, 1.08, 0.9] }}
+                transition={{ duration: breathDuration, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <motion.img
+                key={`${companion.id}-${step}`}
+                src={companion.url}
+                alt={companion.name}
+                animate={{ scale: breathScale }}
+                transition={{ duration: breathDuration, ease: "easeInOut" }}
+                className="relative h-56 w-56 object-contain drop-shadow-[0_0_40px_color-mix(in_oklab,var(--sos-glow)_55%,transparent)] sm:h-64 sm:w-64"
+              />
             </div>
 
             <motion.p
@@ -76,7 +95,7 @@ export function SosScreen({ open, onClose }: { open: boolean; onClose: () => voi
               {BREATH_STEPS[step]?.label}
             </motion.p>
             <p className="text-sm text-muted-foreground">
-              4-7-8 rhythm • follow Nora's ember. You are safe.
+              4-7-8 rhythm • breathe with {companion.name}. You are safe.
             </p>
 
             <div className="mt-6 flex w-full items-center gap-3 rounded-3xl bg-card p-4">
