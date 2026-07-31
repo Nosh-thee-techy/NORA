@@ -7,6 +7,7 @@ import { avatarById } from "@/lib/avatars";
 import { TopNav } from "@/components/TopNav";
 import { PainMapper } from "@/components/PainMapper";
 import { SosScreen } from "@/components/SosScreen";
+import { GemmaChat } from "@/components/GemmaChat";
 import { useNora } from "@/store/nora";
 import { PHASE_META, SYMPTOMS, CYCLE_LENGTH, phaseForDay } from "@/lib/cycle";
 import { Slider } from "@/components/ui/slider";
@@ -219,7 +220,9 @@ function Dashboard() {
         </p>
       </main>
 
-      <PainMapper open={mapper} onClose={() => setMapper(false)} />
+      <GemmaChat />
+
+            <PainMapper open={mapper} onClose={() => setMapper(false)} />
       <SosScreen open={sos} onClose={() => setSos(false)} />
     </div>
   );
