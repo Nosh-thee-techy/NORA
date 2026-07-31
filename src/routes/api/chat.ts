@@ -1,11 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
-
-const OLLAMA_BASE = process.env["OLLAMA_URL"] ?? "http://localhost:11434";
+import { GEMMA_MODEL, getOllamaBase } from "@/lib/ollama";
 
 type ChatBody = {
-  model: string;
+  model?: string;
   messages: Array<{ role: string; content: string }>;
   stream?: boolean;
+  format?: string;
   options?: Record<string, unknown>;
 };
 
@@ -16,11 +16,16 @@ type ChatBody = {
 export const proxyChat = createServerFn({ method: "POST" })
   .validator((body: ChatBody) => body)
   .handler(async ({ data }): Promise<Response> => {
+    const OLLAMA_BASE = getOllamaBase();
+    const payload = {
+      ...data,
+      model: data.model && data.model.length > 0 ? data.model : GEMMA_MODEL,
+    };
     try {
       const upstream = await fetch(`${OLLAMA_BASE}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
       if (!upstream.ok) {

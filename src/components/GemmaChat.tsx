@@ -29,6 +29,7 @@ import {
   clearChatMessages,
   type ChatMessage,
 } from "@/lib/gemma";
+import { GEMMA_MODEL } from "@/lib/ollama";
 import { useOllamaStatus } from "@/hooks/useOllamaStatus";
 import { avatarById } from "@/lib/avatars";
 import { canSpeak, speakText, stopSpeaking } from "@/lib/speech";
@@ -180,7 +181,12 @@ function StatusBadge({
 export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
   const { cycleDay, phase, energy, symptoms, painPoints, profile } = useNora();
   const companion = avatarById(profile.avatarId);
-  const { status: ollamaStatus, modelAvailable, recheck } = useOllamaStatus();
+  const {
+    status: ollamaStatus,
+    modelAvailable,
+    targetModel,
+    recheck,
+  } = useOllamaStatus();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -451,11 +457,18 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
             Ollama is not reachable
           </p>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Start Ollama and pull the model to chat with Nora:
+            Nora chats through local <strong>{GEMMA_MODEL}</strong>. Start Ollama, then:
           </p>
           <code className="mt-1.5 block rounded-lg bg-foreground/5 px-3 py-2 text-[11px] text-foreground">
-            ollama run gemma4:e4b
+            ollama serve && ollama run {GEMMA_MODEL}
           </code>
+          <button
+            type="button"
+            onClick={() => void recheck()}
+            className="mt-2 text-[11px] font-bold text-destructive underline"
+          >
+            Recheck connection
+          </button>
         </div>
       ) : ollamaStatus === "connected" && !modelAvailable ? (
         <div className="mt-3 shrink-0 rounded-2xl bg-amber-500/10 px-4 py-3">
@@ -463,15 +476,22 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
             Model not found
           </p>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Ollama is running but the <strong>gemma4:e4b</strong> model isn't available. Pull it:
+            Ollama is running but <strong>{targetModel || GEMMA_MODEL}</strong> isn’t available yet. Pull it:
           </p>
           <code className="mt-1.5 block rounded-lg bg-foreground/5 px-3 py-2 text-[11px] text-foreground">
-            ollama pull gemma4:e4b
+            ollama pull {GEMMA_MODEL}
           </code>
+          <button
+            type="button"
+            onClick={() => void recheck()}
+            className="mt-2 text-[11px] font-bold text-amber-800 underline"
+          >
+            Recheck models
+          </button>
         </div>
       ) : (
         <p className="mt-2 shrink-0 text-xs text-muted-foreground">
-          Powered by Gemma running on your machine — asks go straight to the local model.
+          Connected to <strong>{GEMMA_MODEL}</strong> on your machine — messages stream from Ollama.
         </p>
       )}
 
