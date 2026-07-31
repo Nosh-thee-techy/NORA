@@ -1,12 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { MessageCircle, Stethoscope, ChevronLeft, ChevronRight } from "lucide-react";
+import { MessageCircle, Stethoscope } from "lucide-react";
 import { avatarById } from "@/lib/avatars";
 import { TopNav } from "@/components/TopNav";
 import { PainMapper } from "@/components/PainMapper";
 import { SosScreen } from "@/components/SosScreen";
-import { useNora } from "@/store/nora";
+import { useNora, cycleDayFromProfile } from "@/store/nora";
 import { PHASE_META, SYMPTOMS, buildCycleWindow } from "@/lib/cycle";
 
 export const Route = createFileRoute("/")({
@@ -47,27 +47,41 @@ function Dashboard() {
   const [sos, setSos] = useState(false);
 
   const cycleWindow = useMemo(() => buildCycleWindow(profile), [profile]);
+  const todayCycleDay = useMemo(() => cycleDayFromProfile(profile), [profile]);
+  const todayCell = useMemo(
+    () => cycleWindow.days.find((d) => d.isToday) ?? cycleWindow.days.find((d) => d.cycleDay === todayCycleDay),
+    [cycleWindow.days, todayCycleDay],
+  );
 
   const threeDayStrip = useMemo(() => {
     const days = cycleWindow.days;
     if (days.length === 0) return [];
-    const idx = Math.max(
+    // Always center on real today so the strip answers "what is today in my cycle?"
+    const todayIdx = Math.max(
       0,
-      days.findIndex((d) => d.cycleDay === cycleDay),
+      days.findIndex((d) => d.isToday || d.cycleDay === todayCycleDay),
     );
-    const prev = days[(idx - 1 + days.length) % days.length]!;
-    const current = days[idx]!;
-    const next = days[(idx + 1) % days.length]!;
+    const prev = days[(todayIdx - 1 + days.length) % days.length]!;
+    const current = days[todayIdx]!;
+    const next = days[(todayIdx + 1) % days.length]!;
     return [
-      { cell: prev, label: "Previous" },
-      { cell: current, label: current.isToday ? "Today" : "Selected" },
-      { cell: next, label: "Next" },
+      { cell: prev, label: "Yesterday" },
+      { cell: current, label: "Today" },
+      { cell: next, label: "Tomorrow" },
     ];
-  }, [cycleWindow.days, cycleDay]);
+  }, [cycleWindow.days, todayCycleDay]);
 
   useEffect(() => {
     if (hydrated && !onboarded) navigate({ to: "/onboarding", replace: true });
   }, [hydrated, onboarded, navigate]);
+
+  // On load, snap cycle day to what today actually is in this cycle
+  useEffect(() => {
+    if (!hydrated || !onboarded) return;
+    setCycleDay(todayCycleDay);
+    // intentionally only when profile/onboarding identity changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, onboarded, profile.lastPeriodStart, profile.cycleLength, todayCycleDay, setCycleDay]);
 
   return (
     <div
@@ -122,45 +136,34 @@ function Dashboard() {
           </motion.div>
         </section>
 
-        {/* Cycle calendar — only previous, today, next */}
+        {/* Cycle calendar — yesterday / today / tomorrow, with cycle meaning */}
         <section className="mt-4 rounded-4xl glass-panel p-4">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <h2 className="text-sm font-bold">Cycle calendar</h2>
-              <p className="text-[11px] font-semibold text-muted-foreground">
-                Day {cycleDay} of {cycleWindow.cycleLength}
-                {cycleWindow.nextPeriodStart
-                  ? ` · next period ~ ${cycleWindow.nextPeriodStart.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
-                  : ""}
-              </p>
-            </div>
-            <div className="flex gap-1">
-              <button
-                aria-label="Previous day"
-                onClick={() => setCycleDay(cycleDay - 1)}
-                className="rounded-full bg-secondary p-1.5"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                aria-label="Next day"
-                onClick={() => setCycleDay(cycleDay + 1)}
-                className="rounded-full bg-secondary p-1.5"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
+          <div className="min-w-0">
+            <h2 className="text-sm font-bold">Cycle calendar</h2>
+            <p className="mt-1 text-sm font-extrabold leading-snug text-foreground">
+              Today is cycle day {todayCycleDay} of {cycleWindow.cycleLength}
+            </p>
+            <p className="mt-0.5 text-[11px] font-semibold text-muted-foreground">
+              {PHASE_META[todayCell?.phase ?? phase].label} phase
+              {todayCell
+                ? ` · ${todayCell.date.toLocaleDateString(undefined, {
+                    weekday: "long",
+                    month: "short",
+                    day: "numeric",
+                  })}`
+                : ""}
+            </p>
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-2">
             {threeDayStrip.map(({ cell, label }) => {
-              const active = cell.cycleDay === cycleDay;
+              const active = cell.isToday;
               return (
                 <button
                   key={`${label}-${cell.cycleDay}`}
                   data-phase={cell.phase}
                   onClick={() => setCycleDay(cell.cycleDay)}
-                  title={`${label} · ${cell.date.toLocaleDateString()}`}
+                  title={`${label} · ${cell.date.toLocaleDateString()} · cycle day ${cell.cycleDay}`}
                   className={`flex flex-col items-center justify-center rounded-3xl px-2 py-3 transition-transform ${
                     active
                       ? "phase-gradient scale-[1.03] text-primary-foreground shadow-[var(--shadow-soft)]"
@@ -178,10 +181,32 @@ function Dashboard() {
                   <span className="mt-1 text-[10px] font-semibold opacity-80">
                     {cell.date.toLocaleDateString(undefined, { weekday: "short" })}
                   </span>
+                  <span
+                    className={`mt-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                      active ? "bg-primary-foreground/15" : "bg-background/60"
+                    }`}
+                  >
+                    Day {cell.cycleDay}
+                  </span>
                 </button>
               );
             })}
           </div>
+
+          {cycleWindow.nextPeriodStart && (
+            <p className="mt-3 text-center text-[11px] font-bold text-phase-deep">
+              Next period expected{" "}
+              {cycleWindow.nextPeriodStart.toLocaleDateString(undefined, {
+                weekday: "short",
+                month: "long",
+                day: "numeric",
+              })}
+              <span className="font-semibold text-muted-foreground">
+                {" "}
+                · about {cycleWindow.periodLength} days
+              </span>
+            </p>
+          )}
         </section>
 
         {/* Symptom chips */}
