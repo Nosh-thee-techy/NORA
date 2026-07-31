@@ -11,11 +11,11 @@ export function TopNav({ onSos }: { onSos: () => void }) {
   return (
     <header className="sticky top-0 z-30 glass-panel rounded-b-3xl px-4 py-3">
       <div className="mx-auto flex max-w-xl items-center gap-3">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2" aria-label="Nora home">
           <img
-            src="/nora-logo.png"
-            alt="Nora"
-            className="h-10 w-auto object-contain rounded-xl mix-blend-multiply dark:mix-blend-normal"
+            src="/nora-icon.png"
+            alt=""
+            className="h-10 w-10 object-contain rounded-2xl mix-blend-multiply dark:mix-blend-normal"
           />
         </Link>
 
