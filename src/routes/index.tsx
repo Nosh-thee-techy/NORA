@@ -6,7 +6,6 @@ import { avatarById } from "@/lib/avatars";
 import { TopNav } from "@/components/TopNav";
 import { PainMapper } from "@/components/PainMapper";
 import { SosScreen } from "@/components/SosScreen";
-import { GemmaChat } from "@/components/GemmaChat";
 import { useNora } from "@/store/nora";
 import { PHASE_META, SYMPTOMS, buildCycleWindow } from "@/lib/cycle";
 import { Slider } from "@/components/ui/slider";
@@ -253,8 +252,6 @@ function Dashboard() {
           Works offline — your logs stay on this device until you choose to share them.
         </p>
       </main>
-
-      <GemmaChat />
 
       <PainMapper open={mapper} onClose={() => setMapper(false)} />
       <SosScreen open={sos} onClose={() => setSos(false)} />

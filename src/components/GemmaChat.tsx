@@ -171,7 +171,7 @@ function StatusBadge({
   );
 }
 
-export function GemmaChat() {
+export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
   const { cycleDay, phase, energy, symptoms, painPoints } = useNora();
   const { status: ollamaStatus, modelAvailable, recheck } = useOllamaStatus();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -182,6 +182,7 @@ export function GemmaChat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isPage = layout === "page";
 
   // Hydrate chat from localStorage on mount
   useEffect(() => {
@@ -289,10 +290,27 @@ export function GemmaChat() {
   }
 
   return (
-    <section className="mt-4 rounded-4xl glass-panel p-5">
-      <div className="flex items-center gap-2">
-        <h2 className="text-sm font-bold">Talk to Luna</h2>
-        <Sparkles className="h-4 w-4 text-primary" />
+    <section
+      className={
+        isPage
+          ? "flex min-h-0 flex-1 flex-col rounded-4xl glass-panel p-4 sm:p-5"
+          : "mt-4 rounded-4xl glass-panel p-5"
+      }
+    >
+      <div className="flex shrink-0 items-center gap-2">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h2 className={isPage ? "text-lg font-extrabold tracking-tight" : "text-sm font-bold"}>
+              Talk to Luna
+            </h2>
+            <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+          </div>
+          {isPage && (
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Your private local companion — grounded in today’s cycle and symptoms.
+            </p>
+          )}
+        </div>
         <div className="ml-auto flex items-center gap-2">
           <StatusBadge status={ollamaStatus} modelAvailable={modelAvailable} />
           {messages.length > 0 && (
@@ -308,7 +326,7 @@ export function GemmaChat() {
       </div>
 
       {ollamaStatus === "disconnected" ? (
-        <div className="mt-3 rounded-2xl bg-destructive/10 px-4 py-3">
+        <div className="mt-3 shrink-0 rounded-2xl bg-destructive/10 px-4 py-3">
           <p className="text-xs font-semibold text-destructive">
             Ollama is not reachable
           </p>
@@ -320,7 +338,7 @@ export function GemmaChat() {
           </code>
         </div>
       ) : ollamaStatus === "connected" && !modelAvailable ? (
-        <div className="mt-3 rounded-2xl bg-amber-500/10 px-4 py-3">
+        <div className="mt-3 shrink-0 rounded-2xl bg-amber-500/10 px-4 py-3">
           <p className="text-xs font-semibold text-amber-700">
             Model not found
           </p>
@@ -332,20 +350,35 @@ export function GemmaChat() {
           </code>
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">
+        <p className="mt-2 shrink-0 text-xs text-muted-foreground">
           Powered by Gemma running on your machine — asks go straight to the local model.
         </p>
       )}
 
       <div
         ref={scrollRef}
-        className="mt-4 flex max-h-72 min-h-24 flex-col gap-2 overflow-y-auto pr-1"
+        className={
+          isPage
+            ? "mt-4 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1"
+            : "mt-4 flex max-h-72 min-h-24 flex-col gap-2 overflow-y-auto pr-1"
+        }
       >
         {messages.length === 0 && !streaming && (
-          <div className="flex flex-col items-center gap-2 py-4 text-center">
-            <p className="text-sm text-muted-foreground">
+          <div
+            className={
+              isPage
+                ? "flex flex-1 flex-col items-center justify-center gap-3 px-2 py-8 text-center"
+                : "flex flex-col items-center gap-2 py-4 text-center"
+            }
+          >
+            <p className={isPage ? "text-base font-semibold text-foreground" : "text-sm text-muted-foreground"}>
               Say hi — or ask about how you're feeling.
             </p>
+            {isPage && (
+              <p className="max-w-sm text-sm text-muted-foreground">
+                Luna uses your cycle day, energy, and logged symptoms for grounded support.
+              </p>
+            )}
             <div className="flex flex-wrap justify-center gap-2">
               {SUGGESTIONS.map((s) => (
                 <button
@@ -399,7 +432,7 @@ export function GemmaChat() {
         </AnimatePresence>
       </div>
 
-      <form onSubmit={onSubmit} className="mt-3 flex items-end gap-2">
+      <form onSubmit={onSubmit} className="mt-3 flex shrink-0 items-end gap-2 border-t border-border/60 pt-3">
         <textarea
           ref={textareaRef}
           value={input}

@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Sprout, HeartPulse, FileText, Home } from "lucide-react";
+import { Sprout, HeartPulse, FileText, Home, MessageCircle } from "lucide-react";
 import { useNora } from "@/store/nora";
 import { PHASE_META } from "@/lib/cycle";
 import { cn } from "@/lib/utils";
@@ -40,7 +40,8 @@ export function TopNav({ onSos }: { onSos: () => void }) {
       <nav className="mx-auto mt-3 flex max-w-xl gap-2">
         {[
           { to: "/", label: "Today", icon: Home },
-          { to: "/report", label: "My Health Story", icon: FileText },
+          { to: "/chat", label: "Talk", icon: MessageCircle },
+          { to: "/report", label: "Story", icon: FileText },
         ].map((item) => (
           <Link
             key={item.to}
