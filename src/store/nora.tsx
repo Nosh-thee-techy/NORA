@@ -17,21 +17,48 @@ export type PainPoint = {
   depth: number;
 };
 
+export type OnboardingProfile = {
+  lastPeriodStart: string | null;
+  cycleLength: number | null;
+  periodLength: number | null;
+  profileSymptoms: string[];
+  whatsappNumber: string;
+  whatsappCountry: string;
+  dailyCheckin: boolean;
+  emergencyContact: string;
+};
+
 type NoraState = {
   cycleDay: number;
   energy: number;
   symptoms: SymptomId[];
   painPoints: PainPoint[];
+  onboarded: boolean;
+  profile: OnboardingProfile;
 };
 
 const STORAGE_KEY = "nora-bloom-state-v1";
+
+export const DEFAULT_PROFILE: OnboardingProfile = {
+  lastPeriodStart: null,
+  cycleLength: 28,
+  periodLength: 5,
+  profileSymptoms: [],
+  whatsappNumber: "",
+  whatsappCountry: "+1",
+  dailyCheckin: true,
+  emergencyContact: "",
+};
 
 const DEFAULT_STATE: NoraState = {
   cycleDay: 14,
   energy: 55,
   symptoms: [],
   painPoints: [],
+  onboarded: false,
+  profile: DEFAULT_PROFILE,
 };
+
 
 type Ctx = NoraState & {
   phase: Phase;
