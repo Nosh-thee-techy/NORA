@@ -278,13 +278,13 @@ function StepWelcome({
                 transition={{ duration: 0.28, ease: "easeOut" }}
                 className="flex flex-col items-center"
               >
-                <div className="relative grid aspect-square w-full max-w-[220px] place-items-center overflow-hidden rounded-[2rem] bg-card shadow-[var(--shadow-soft)] ring-2 ring-primary/40">
+                <div className="relative grid aspect-square w-full max-w-[220px] place-items-center overflow-hidden">
                   <img
                     src={avatar.url}
                     alt={avatar.name}
-                    className="h-full w-full object-contain p-3"
+                    className="h-full w-full object-contain drop-shadow-[0_18px_40px_color-mix(in_oklab,var(--phase)_35%,transparent)]"
                   />
-                  <span className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full phase-gradient text-primary-foreground">
+                  <span className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full phase-gradient text-primary-foreground shadow-[var(--shadow-soft)]">
                     <Check className="h-3.5 w-3.5" />
                   </span>
                 </div>
