@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { MessageCircle, Stethoscope, ChevronLeft, ChevronRight } from "lucide-react";
 import { Luna } from "@/components/Luna";
