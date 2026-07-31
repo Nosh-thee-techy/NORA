@@ -48,22 +48,77 @@ export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const url = new URL(request.url);
+      const OLLAMA_BASE = process.env["OLLAMA_URL"] ?? "http://127.0.0.1:11434";
+      const GEMMA_MODEL = process.env["GEMMA_MODEL"] ?? "gemma:2b";
+
+      if (url.pathname === "/api/ollama-status" && request.method === "GET") {
+        try {
+          const res = await fetch(`${OLLAMA_BASE}/api/tags`, {
+            signal: AbortSignal.timeout(4000),
+          });
+          if (!res.ok) {
+            return Response.json({
+              status: "disconnected",
+              modelAvailable: false,
+              targetModel: GEMMA_MODEL,
+              error: `Ollama returned ${res.status}`,
+            });
+          }
+          const data = (await res.json()) as {
+            models?: Array<{ name?: string; model?: string }>;
+          };
+          const models = (data.models ?? [])
+            .map((m) => m.name ?? m.model)
+            .filter(Boolean) as string[];
+          const modelAvailable = models.some((name) => {
+            const n = name.toLowerCase();
+            return (
+              n === "gemma:2b" ||
+              n === "gemma2:2b" ||
+              n.startsWith("gemma:2b-") ||
+              n.startsWith("gemma2:2b-")
+            );
+          });
+          return Response.json({
+            status: "connected",
+            modelAvailable,
+            targetModel: GEMMA_MODEL,
+            models,
+          });
+        } catch {
+          return Response.json({
+            status: "disconnected",
+            modelAvailable: false,
+            targetModel: GEMMA_MODEL,
+            error: `Cannot reach Ollama at ${OLLAMA_BASE}`,
+          });
+        }
+      }
+
       if (url.pathname === "/api/chat" && request.method === "POST") {
-        const OLLAMA_BASE = process.env["OLLAMA_URL"] ?? "http://localhost:11434";
-        
-        // Pass through the exact request payload
-        const payload = await request.text();
-        
+        // Pass through the request payload, forcing gemma:2b when model is missing
+        const raw = await request.text();
+        let body = raw;
+        try {
+          const parsed = JSON.parse(raw) as { model?: string };
+          if (!parsed.model) {
+            body = JSON.stringify({ ...parsed, model: GEMMA_MODEL });
+          }
+        } catch {
+          /* keep raw body */
+        }
+
         const upstream = await fetch(`${OLLAMA_BASE}/api/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: payload,
+          body,
         });
-        
+
         return new Response(upstream.body, {
           status: upstream.status,
           headers: {
-            "Content-Type": "application/x-ndjson",
+            "Content-Type":
+              upstream.headers.get("Content-Type") ?? "application/x-ndjson",
             "Cache-Control": "no-cache",
           },
         });
