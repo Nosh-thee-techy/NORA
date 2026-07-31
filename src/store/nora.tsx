@@ -59,6 +59,31 @@ const DEFAULT_STATE: NoraState = {
   profile: DEFAULT_PROFILE,
 };
 
+const SYMPTOM_MAP: Record<string, SymptomId> = {
+  "severe-pain": "cramps",
+  "standard-cramps": "cramps",
+  bloating: "endo-belly",
+  "radiating-pain": "leg-pain",
+  "heavy-flow": "heavy-flow",
+  "digestive-pain": "nausea",
+};
+
+export function mapProfileSymptoms(ids: string[]): SymptomId[] {
+  const mapped = ids.map((id) => SYMPTOM_MAP[id]).filter(Boolean) as SymptomId[];
+  return Array.from(new Set(mapped));
+}
+
+export function cycleDayFromProfile(profile: OnboardingProfile): number {
+  if (!profile.lastPeriodStart) return 1;
+  const start = new Date(profile.lastPeriodStart + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diff = Math.floor((today.getTime() - start.getTime()) / 86_400_000);
+  if (!Number.isFinite(diff) || diff < 0) return 1;
+  const len = profile.cycleLength ?? CYCLE_LENGTH;
+  return Math.min(CYCLE_LENGTH, (diff % len) + 1);
+}
+
 
 type Ctx = NoraState & {
   phase: Phase;
