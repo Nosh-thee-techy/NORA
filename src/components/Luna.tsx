@@ -82,7 +82,8 @@ export function Luna({
         viewBox="0 0 200 200"
         width={size}
         height={size}
-        className="relative text-phase"
+        className="relative"
+        style={{ color: "var(--phase)" }}
         key={wobble}
         initial={{ rotate: 0 }}
         animate={{ rotate: [0, -4, 3, -2, 0], scale }}
