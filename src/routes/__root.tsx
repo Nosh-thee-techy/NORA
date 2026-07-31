@@ -112,7 +112,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/nora-logo.png", type: "image/png" },
+      { rel: "icon", href: "/nora-icon.png", type: "image/png" },
     ],
   }),
 
