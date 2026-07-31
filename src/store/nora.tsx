@@ -17,21 +17,73 @@ export type PainPoint = {
   depth: number;
 };
 
+export type OnboardingProfile = {
+  lastPeriodStart: string | null;
+  cycleLength: number | null;
+  periodLength: number | null;
+  profileSymptoms: string[];
+  whatsappNumber: string;
+  whatsappCountry: string;
+  dailyCheckin: boolean;
+  emergencyContact: string;
+};
+
 type NoraState = {
   cycleDay: number;
   energy: number;
   symptoms: SymptomId[];
   painPoints: PainPoint[];
+  onboarded: boolean;
+  profile: OnboardingProfile;
 };
 
 const STORAGE_KEY = "nora-bloom-state-v1";
+
+export const DEFAULT_PROFILE: OnboardingProfile = {
+  lastPeriodStart: null,
+  cycleLength: 28,
+  periodLength: 5,
+  profileSymptoms: [],
+  whatsappNumber: "",
+  whatsappCountry: "+1",
+  dailyCheckin: true,
+  emergencyContact: "",
+};
 
 const DEFAULT_STATE: NoraState = {
   cycleDay: 14,
   energy: 55,
   symptoms: [],
   painPoints: [],
+  onboarded: false,
+  profile: DEFAULT_PROFILE,
 };
+
+const SYMPTOM_MAP: Record<string, SymptomId> = {
+  "severe-pain": "cramps",
+  "standard-cramps": "cramps",
+  bloating: "endo-belly",
+  "radiating-pain": "leg-pain",
+  "heavy-flow": "heavy-flow",
+  "digestive-pain": "nausea",
+};
+
+export function mapProfileSymptoms(ids: string[]): SymptomId[] {
+  const mapped = ids.map((id) => SYMPTOM_MAP[id]).filter(Boolean) as SymptomId[];
+  return Array.from(new Set(mapped));
+}
+
+export function cycleDayFromProfile(profile: OnboardingProfile): number {
+  if (!profile.lastPeriodStart) return 1;
+  const start = new Date(profile.lastPeriodStart + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diff = Math.floor((today.getTime() - start.getTime()) / 86_400_000);
+  if (!Number.isFinite(diff) || diff < 0) return 1;
+  const len = profile.cycleLength ?? CYCLE_LENGTH;
+  return Math.min(CYCLE_LENGTH, (diff % len) + 1);
+}
+
 
 type Ctx = NoraState & {
   phase: Phase;
@@ -41,7 +93,10 @@ type Ctx = NoraState & {
   addPainPoint: (p: PainPoint) => void;
   updatePainPoint: (id: string, patch: Partial<PainPoint>) => void;
   removePainPoint: (id: string) => void;
+  completeOnboarding: (profile: OnboardingProfile) => void;
+  resetOnboarding: () => void;
   hydrated: boolean;
+
 };
 
 const NoraContext = createContext<Ctx | null>(null);
@@ -92,6 +147,16 @@ export function NoraProvider({ children }: { children: ReactNode }) {
         })),
       removePainPoint: (id) =>
         setState((s) => ({ ...s, painPoints: s.painPoints.filter((p) => p.id !== id) })),
+      completeOnboarding: (profile) =>
+        setState((s) => ({
+          ...s,
+          onboarded: true,
+          profile,
+          cycleDay: cycleDayFromProfile(profile),
+          symptoms: mapProfileSymptoms(profile.profileSymptoms),
+        })),
+      resetOnboarding: () => setState((s) => ({ ...s, onboarded: false })),
+
     }),
     [state, hydrated],
   );
