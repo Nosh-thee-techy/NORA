@@ -141,3 +141,33 @@ export function upsertMonthLog(
 export function currentMonthKey(d = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
+
+/** Shift a yyyy-MM key by `delta` calendar months. */
+export function shiftMonthKey(month: string, delta: number): string {
+  const [yRaw, mRaw] = month.split("-");
+  const y = Number(yRaw);
+  const m = Number(mRaw);
+  const d = new Date(y, m - 1 + delta, 1);
+  return currentMonthKey(d);
+}
+
+/** A month counts as fully credited for the resilience path. */
+export function isHighRiskMonth(log: MonthLog | undefined): boolean {
+  if (!log) return false;
+  return log.peakPain >= 7 && log.endoBellyDays >= 3 && log.missedFunction;
+}
+
+/**
+ * Pick which month to credit next: current month if not high-risk yet,
+ * otherwise the nearest prior month that isn't logged as high-risk.
+ */
+export function nextMonthToCredit(logs: MonthLog[], onDate = new Date()): string {
+  const current = currentMonthKey(onDate);
+  const byMonth = new Map(logs.map((l) => [l.month, l]));
+  if (!isHighRiskMonth(byMonth.get(current))) return current;
+  for (let i = 1; i <= 5; i++) {
+    const key = shiftMonthKey(current, -i);
+    if (!isHighRiskMonth(byMonth.get(key))) return key;
+  }
+  return current;
+}

@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { MessageCircle, Stethoscope, HeartPulse, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { avatarById } from "@/lib/avatars";
 import { Luna } from "@/components/Luna";
 import { TopNav } from "@/components/TopNav";
@@ -327,10 +328,20 @@ function Dashboard() {
             {!resilienceUnlocked && (
               <button
                 type="button"
-                onClick={recordPatternMonth}
-                className="mt-2 text-[11px] font-bold text-phase-deep underline"
+                onClick={() => {
+                  const credited = recordPatternMonth();
+                  const already = monthLogs.some((m) => m.month === credited);
+                  const shown = Math.min(3, already ? monthLogs.length : monthLogs.length + 1);
+                  toast.success(`Credited ${credited} · ${shown}/3 toward resilience`, {
+                    description:
+                      shown >= 3
+                        ? "Three-month pattern locked — Nora’s resilience glow should appear."
+                        : "Tap again to credit another prior month.",
+                  });
+                }}
+                className="mt-2 rounded-full bg-phase/15 px-3 py-1.5 text-[11px] font-bold text-phase-deep"
               >
-                Credit this month’s high-pain pattern
+                Credit high-pain pattern month
               </button>
             )}
           </div>
