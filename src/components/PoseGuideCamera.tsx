@@ -45,7 +45,7 @@ export function PoseGuideCamera({
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
   const [poseIndex, setPoseIndex] = useState(0);
-  const [remaining, setRemaining] = useState(POSES[0].durationSec);
+  const [remaining, setRemaining] = useState<number>(POSES[0].durationSec);
   const [breathStep, setBreathStep] = useState(0);
   const [running, setRunning] = useState(true);
 
