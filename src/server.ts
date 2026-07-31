@@ -47,6 +47,28 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const url = new URL(request.url);
+      if (url.pathname === "/api/chat" && request.method === "POST") {
+        const OLLAMA_BASE = process.env["OLLAMA_URL"] ?? "http://localhost:11434";
+        
+        // Pass through the exact request payload
+        const payload = await request.text();
+        
+        const upstream = await fetch(`${OLLAMA_BASE}/api/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: payload,
+        });
+        
+        return new Response(upstream.body, {
+          status: upstream.status,
+          headers: {
+            "Content-Type": "application/x-ndjson",
+            "Cache-Control": "no-cache",
+          },
+        });
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

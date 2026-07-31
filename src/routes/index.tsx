@@ -6,6 +6,7 @@ import { Luna } from "@/components/Luna";
 import { TopNav } from "@/components/TopNav";
 import { PainMapper } from "@/components/PainMapper";
 import { SosScreen } from "@/components/SosScreen";
+import { GemmaChat } from "@/components/GemmaChat";
 import { useNora } from "@/store/nora";
 import { PHASE_META, SYMPTOMS, CYCLE_LENGTH, phaseForDay } from "@/lib/cycle";
 import { Slider } from "@/components/ui/slider";
@@ -32,6 +33,8 @@ export const Route = createFileRoute("/")({
 
 function Dashboard() {
   const {
+    userName,
+    setUserName,
     cycleDay,
     setCycleDay,
     energy,
@@ -71,7 +74,18 @@ function Dashboard() {
             {wobbleNote ? "Luna wobbles softly. I'm right here. 💛" : PHASE_META[phase].blurb}
           </motion.p>
           <h1 className="relative mt-3 text-center text-2xl font-extrabold tracking-tight">
-            How are you feeling today, Sarah?
+            How are you feeling today,{" "}
+            <span
+              onClick={() => {
+                const name = window.prompt("What's your name?", userName);
+                if (name && name.trim()) setUserName(name.trim());
+              }}
+              className="cursor-pointer border-b-2 border-primary/30 pb-0.5 transition-colors hover:text-primary"
+              title="Click to change your name"
+            >
+              {userName}
+            </span>
+            ?
           </h1>
         </section>
 
@@ -175,6 +189,9 @@ function Dashboard() {
             )}
           </button>
         </section>
+
+        {/* AI companion */}
+        <GemmaChat />
 
         {/* WhatsApp sync */}
         <section className="mt-4 flex items-center gap-3 rounded-3xl glass-panel px-4 py-3">

@@ -18,6 +18,7 @@ export type PainPoint = {
 };
 
 type NoraState = {
+  userName: string;
   cycleDay: number;
   energy: number;
   symptoms: SymptomId[];
@@ -27,6 +28,7 @@ type NoraState = {
 const STORAGE_KEY = "nora-bloom-state-v1";
 
 const DEFAULT_STATE: NoraState = {
+  userName: "Sarah",
   cycleDay: 14,
   energy: 55,
   symptoms: [],
@@ -35,6 +37,7 @@ const DEFAULT_STATE: NoraState = {
 
 type Ctx = NoraState & {
   phase: Phase;
+  setUserName: (name: string) => void;
   setCycleDay: (d: number) => void;
   setEnergy: (v: number) => void;
   toggleSymptom: (id: SymptomId) => void;
@@ -74,6 +77,7 @@ export function NoraProvider({ children }: { children: ReactNode }) {
       ...state,
       hydrated,
       phase: phaseForDay(state.cycleDay),
+      setUserName: (name) => setState((s) => ({ ...s, userName: name })),
       setCycleDay: (d) =>
         setState((s) => ({ ...s, cycleDay: Math.min(CYCLE_LENGTH, Math.max(1, d)) })),
       setEnergy: (v) => setState((s) => ({ ...s, energy: v })),
