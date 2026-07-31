@@ -13,7 +13,7 @@ export function TopNav({ onSos }: { onSos: () => void }) {
       <div className="mx-auto flex max-w-xl items-center gap-3">
         <Link to="/" className="flex items-center gap-2" aria-label="Nora home">
           <img
-            src="/nora-icon.png"
+            src="/nora-logo.png"
             alt=""
             className="h-10 w-10 object-contain rounded-2xl mix-blend-multiply dark:mix-blend-normal"
           />
