@@ -41,12 +41,13 @@ const SUGGESTIONS = [
   "Help me feel calmer",
 ];
 
-function buildLunaSystemPrompt(
+function buildNoraSystemPrompt(
   day: number,
   phase: Phase,
   energy: number,
   symptoms: string[],
   painPoints: PainPoint[],
+  companionName: string,
 ): string {
   const labels = symptoms.length
     ? symptoms.map((id) => SYMPTOMS.find((s) => s.id === id)?.label ?? id).join(", ")
@@ -77,11 +78,11 @@ function buildLunaSystemPrompt(
       : "No mapped pain points.";
 
   return [
-    "You are Luna, the warm, empathetic AI companion inside NORA ('Bloom'), a menstrual health and endometriosis awareness app.",
+    `You are Nora, speaking through the user's chosen companion face "${companionName}" inside the Nora menstrual health and endometriosis awareness app.`,
     "Speak gently, in short, caring sentences. Never clinical or scary. You are not a doctor and must not diagnose or prescribe; if something sounds urgent, gently suggest reaching out to a healthcare provider.",
     `Current context — cycle day ${day} (${phaseInfo.label} phase, ${dayOfPhase}), energy ${energy}%, logged symptoms: ${labels}.`,
     painContext,
-    `Luna's current form: "${phaseInfo.lunaName}" — ${phaseInfo.blurb}`,
+    `Companion mood form: "${phaseInfo.lunaName}" — ${phaseInfo.blurb}`,
     "Keep replies as short as possible (1-2 sentences max) unless the user asks for important work or complex information where more detail is necessary. Use warmth and emoji sparingly. Be supportive and body-positive.",
   ].join("\n");
 }
@@ -260,7 +261,14 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
       textareaRef.current.style.height = "auto";
     }
 
-    const system = buildLunaSystemPrompt(cycleDay, phase, energy, symptoms, painPoints);
+    const system = buildNoraSystemPrompt(
+      cycleDay,
+      phase,
+      energy,
+      symptoms,
+      painPoints,
+      companion.name,
+    );
     const userMessage: ChatMessage = { role: "user", content: trimmed };
     const history = messages.length ? messages : [{ role: "system" as const, content: system }];
 
@@ -354,13 +362,13 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h2 className={isPage ? "text-lg font-extrabold tracking-tight" : "text-sm font-bold"}>
-              Talk with {companion.name}
+              Talk to Nora
             </h2>
             <Sparkles className="h-4 w-4 shrink-0 text-primary" />
           </div>
           {isPage && (
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Voice + image replies from your companion — grounded in today’s cycle.
+              Nora speaks through {companion.name} — voice + image, grounded in today’s cycle.
             </p>
           )}
         </div>
@@ -443,7 +451,7 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
             Ollama is not reachable
           </p>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Start Ollama and pull the model to chat with Luna:
+            Start Ollama and pull the model to chat with Nora:
           </p>
           <code className="mt-1.5 block rounded-lg bg-foreground/5 px-3 py-2 text-[11px] text-foreground">
             ollama run gemma4:e4b

@@ -128,7 +128,7 @@ export async function analyzeHealthData(
   history: ChatMessage[],
 ): Promise<ReportData> {
   const analyzerSystemPrompt = [
-    "You are a clinical analysis engine working alongside NORA, a menstrual health tracking app.",
+    "You are a clinical analysis engine working alongside Nora, a menstrual health tracking app.",
     "Your job is to read the user's current physical state and their recent chat history, then extract key metrics and produce a clinical triage summary.",
     "Identify any patterns consistent with endometriosis or other reproductive health conditions (e.g., cyclical deep pelvic pain, radiating leg pain, endo belly).",
     "Do NOT diagnose the user—frame it as a 'screening signal' or 'pattern analysis' to share with their doctor.",

@@ -9,22 +9,22 @@ export const PHASE_META: Record<
 > = {
   menstrual: {
     label: "Menstruation",
-    blurb: "Luna is a warm, protective ember. Rest is productive.",
+    blurb: "Nora holds a warm, protective ember. Rest is productive.",
     lunaName: "Ember",
   },
   follicular: {
     label: "Follicular",
-    blurb: "Luna is a calm dew-drop. Energy is quietly rebuilding.",
+    blurb: "Nora is a calm dew-drop. Energy is quietly rebuilding.",
     lunaName: "Dew",
   },
   ovulation: {
     label: "Ovulation",
-    blurb: "Luna is sparkling. You may feel most radiant now.",
+    blurb: "Nora is sparkling. You may feel most radiant now.",
     lunaName: "Spark",
   },
   luteal: {
     label: "Luteal",
-    blurb: "Luna is a soft cloud. Bloating and heaviness are common.",
+    blurb: "Nora is a soft cloud. Bloating and heaviness are common.",
     lunaName: "Cloud",
   },
 };
@@ -154,7 +154,7 @@ export function buildCycleWindow(
       nextPeriodStart: null,
       days,
       insight:
-        "Add when your last period started so Bloom can place your cycle on real dates — not the 1st of the month.",
+        "Add when your last period started so Nora can place your cycle on real dates — not the 1st of the month.",
     };
   }
 

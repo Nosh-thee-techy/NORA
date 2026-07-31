@@ -76,7 +76,7 @@ export function SosScreen({ open, onClose }: { open: boolean; onClose: () => voi
               {BREATH_STEPS[step]?.label}
             </motion.p>
             <p className="text-sm text-muted-foreground">
-              4-7-8 rhythm • follow Luna's ember. You are safe.
+              4-7-8 rhythm • follow Nora's ember. You are safe.
             </p>
 
             <div className="mt-6 flex w-full items-center gap-3 rounded-3xl bg-card p-4">

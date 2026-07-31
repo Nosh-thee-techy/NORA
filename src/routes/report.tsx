@@ -10,7 +10,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/report")({
   head: () => ({
     meta: [
-      { title: "My Health Story — Doctor Advocacy Report | NORA" },
+      { title: "My Health Story — Doctor Advocacy Report | Nora" },
       {
         name: "description",
         content:
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/report")({
       {
         property: "og:description",
         content:
-          "Turn three months of NORA cycle logs into a clean clinical summary with pain impact metrics.",
+          "Turn three months of Nora cycle logs into a clean clinical summary with pain impact metrics.",
       },
     ],
   }),
@@ -117,7 +117,7 @@ function ReportPage() {
             review.
           </p>
           <p className="mt-2 text-[11px] text-muted-foreground">
-            NORA is not a diagnostic device. This summary supports your conversation with a
+            Nora is not a diagnostic device. This summary supports your conversation with a
             clinician.
           </p>
         </section>
