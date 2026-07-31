@@ -1,0 +1,143 @@
+import {
+  buildCycleWindow,
+  daysBetween,
+  phaseForDay,
+  resolveCycleLength,
+  resolvePeriodLength,
+  startOfDay,
+  type CycleProfileInput,
+  type Phase,
+} from "@/lib/cycle";
+
+export type ForecastInsight = {
+  daysUntilPeriod: number | null;
+  inPainWindow: boolean;
+  approachingPainWindow: boolean;
+  warmerUi: boolean;
+  prompt: string | null;
+  phaseIn48h: Phase | null;
+};
+
+/** High-pain window = last 2 luteal days + menstrual days. */
+export function getForecast(profile: CycleProfileInput, onDate = new Date()): ForecastInsight {
+  const window = buildCycleWindow(profile, onDate);
+  const len = resolveCycleLength(profile.cycleLength);
+  const period = resolvePeriodLength(profile.periodLength);
+  const today = startOfDay(onDate);
+
+  if (!window.nextPeriodStart || !window.cycleStart) {
+    return {
+      daysUntilPeriod: null,
+      inPainWindow: false,
+      approachingPainWindow: false,
+      warmerUi: false,
+      prompt: null,
+      phaseIn48h: null,
+    };
+  }
+
+  const daysUntilPeriod = Math.max(0, daysBetween(today, window.nextPeriodStart));
+  const cycleDay = (() => {
+    const diff = daysBetween(window.cycleStart, today);
+    if (diff < 0) return 1;
+    return (diff % len) + 1;
+  })();
+
+  const lutealStart = Math.max(period + 1, len - 14 + 3);
+  const inPainWindow = cycleDay <= period || cycleDay >= len - 1;
+  const approachingPainWindow = daysUntilPeriod > 0 && daysUntilPeriod <= 2;
+  const warmerUi = inPainWindow || approachingPainWindow || daysUntilPeriod <= 3;
+
+  const phaseIn48h = phaseForDay(cycleDay + 2, {
+    cycleLength: len,
+    periodLength: period,
+  });
+
+  let prompt: string | null = null;
+  if (approachingPainWindow) {
+    prompt = `Nora predicts a challenge in about ${daysUntilPeriod * 24} hours. Let's practice supported Child's Pose today to keep pelvic pressure low.`;
+  } else if (inPainWindow && cycleDay <= period) {
+    prompt = "You're in a high-sensitivity window. Go slow — open the camera pose guide if you need relief.";
+  }
+
+  return {
+    daysUntilPeriod,
+    inPainWindow,
+    approachingPainWindow,
+    warmerUi,
+    prompt,
+    phaseIn48h,
+  };
+}
+
+export type MonthLog = {
+  /** yyyy-MM */
+  month: string;
+  peakPain: number;
+  endoBellyDays: number;
+  missedFunction: boolean;
+  heavyFlow: boolean;
+};
+
+export function evaluateEndoRisk(logs: MonthLog[]): {
+  highRisk: boolean;
+  resilienceUnlocked: boolean;
+  reason: string;
+} {
+  if (logs.length < 3) {
+    return {
+      highRisk: false,
+      resilienceUnlocked: false,
+      reason: "Log three months to unlock Nora's resilience marker.",
+    };
+  }
+
+  const recent = logs.slice(-3);
+  const highPainMonths = recent.filter((m) => m.peakPain >= 7).length;
+  const endoPattern = recent.filter((m) => m.endoBellyDays >= 3).length;
+  const functionImpact = recent.filter((m) => m.missedFunction).length;
+  const highRisk = highPainMonths >= 2 && (endoPattern >= 2 || functionImpact >= 2);
+
+  return {
+    highRisk,
+    resilienceUnlocked: highRisk,
+    reason: highRisk
+      ? "Pattern noted across three months — Nora carries a resilience glow with you."
+      : "Patterns are being watched gently. Keep logging when you can.",
+  };
+}
+
+/** Seed or merge a month log from today's symptoms/pain. */
+export function upsertMonthLog(
+  logs: MonthLog[],
+  patch: Partial<MonthLog> & { month: string },
+): MonthLog[] {
+  const existing = logs.find((l) => l.month === patch.month);
+  if (!existing) {
+    return [
+      ...logs,
+      {
+        month: patch.month,
+        peakPain: patch.peakPain ?? 0,
+        endoBellyDays: patch.endoBellyDays ?? 0,
+        missedFunction: patch.missedFunction ?? false,
+        heavyFlow: patch.heavyFlow ?? false,
+      },
+    ].slice(-6);
+  }
+  return logs.map((l) =>
+    l.month === patch.month
+      ? {
+          ...l,
+          peakPain: Math.max(l.peakPain, patch.peakPain ?? 0),
+          endoBellyDays: Math.max(l.endoBellyDays, patch.endoBellyDays ?? 0),
+          missedFunction: l.missedFunction || !!patch.missedFunction,
+          heavyFlow: l.heavyFlow || !!patch.heavyFlow,
+        }
+      : l,
+  );
+}
+
+export function currentMonthKey(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
