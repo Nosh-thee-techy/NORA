@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { NoraProvider } from "@/store/nora";
+import { AvatarTheme } from "@/components/AvatarTheme";
 import { Toaster } from "@/components/ui/sonner";
 
 
@@ -141,6 +142,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <NoraProvider>
+        <AvatarTheme />
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
         <Toaster position="top-center" />

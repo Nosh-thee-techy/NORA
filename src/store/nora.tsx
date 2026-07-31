@@ -7,7 +7,13 @@ import {
   type ReactNode,
 } from "react";
 import { DEFAULT_AVATAR_ID } from "@/lib/avatars";
-import { phaseForDay, type Phase, type SymptomId, CYCLE_LENGTH } from "@/lib/cycle";
+import {
+  phaseForDay,
+  cycleDayFromLastPeriod,
+  resolveCycleLength,
+  type Phase,
+  type SymptomId,
+} from "@/lib/cycle";
 
 export type PainPoint = {
   id: string;
@@ -77,14 +83,7 @@ export function mapProfileSymptoms(ids: string[]): SymptomId[] {
 }
 
 export function cycleDayFromProfile(profile: OnboardingProfile): number {
-  if (!profile.lastPeriodStart) return 1;
-  const start = new Date(profile.lastPeriodStart + "T00:00:00");
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diff = Math.floor((today.getTime() - start.getTime()) / 86_400_000);
-  if (!Number.isFinite(diff) || diff < 0) return 1;
-  const len = profile.cycleLength ?? CYCLE_LENGTH;
-  return Math.min(CYCLE_LENGTH, (diff % len) + 1);
+  return cycleDayFromLastPeriod(profile);
 }
 
 
@@ -127,13 +126,22 @@ export function NoraProvider({ children }: { children: ReactNode }) {
     }
   }, [state, hydrated]);
 
+  const cycleLen = resolveCycleLength(state.profile.cycleLength);
+
   const value = useMemo<Ctx>(
     () => ({
       ...state,
       hydrated,
-      phase: phaseForDay(state.cycleDay),
+      phase: phaseForDay(state.cycleDay, {
+        cycleLength: state.profile.cycleLength,
+        periodLength: state.profile.periodLength,
+      }),
       setCycleDay: (d) =>
-        setState((s) => ({ ...s, cycleDay: Math.min(CYCLE_LENGTH, Math.max(1, d)) })),
+        setState((s) => {
+          const len = resolveCycleLength(s.profile.cycleLength);
+          const next = ((d - 1) % len + len) % len;
+          return { ...s, cycleDay: next + 1 };
+        }),
       setEnergy: (v) => setState((s) => ({ ...s, energy: v })),
       toggleSymptom: (id) =>
         setState((s) => ({
@@ -159,9 +167,8 @@ export function NoraProvider({ children }: { children: ReactNode }) {
           symptoms: mapProfileSymptoms(profile.profileSymptoms),
         })),
       resetOnboarding: () => setState((s) => ({ ...s, onboarded: false })),
-
     }),
-    [state, hydrated],
+    [state, hydrated, cycleLen],
   );
 
   return <NoraContext.Provider value={value}>{children}</NoraContext.Provider>;
