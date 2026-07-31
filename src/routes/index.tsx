@@ -8,7 +8,6 @@ import { PainMapper } from "@/components/PainMapper";
 import { SosScreen } from "@/components/SosScreen";
 import { useNora } from "@/store/nora";
 import { PHASE_META, SYMPTOMS, buildCycleWindow } from "@/lib/cycle";
-import { Slider } from "@/components/ui/slider";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -34,8 +33,6 @@ function Dashboard() {
   const {
     cycleDay,
     setCycleDay,
-    energy,
-    setEnergy,
     symptoms,
     toggleSymptom,
     phase,
@@ -184,27 +181,6 @@ function Dashboard() {
                 </button>
               );
             })}
-          </div>
-        </section>
-
-        {/* Check-in slider */}
-        <section className="mt-4 rounded-4xl glass-panel p-5">
-          <h2 className="text-sm font-bold">3-second check-in</h2>
-          <p className="text-xs text-muted-foreground">
-            Slide to tune how {companion.name} holds space with you today.
-          </p>
-          <Slider
-            value={[energy]}
-            min={0}
-            max={100}
-            step={1}
-            onValueChange={(v) => setEnergy(v[0] ?? 0)}
-            className="mt-4"
-          />
-          <div className="mt-2 flex justify-between text-[11px] font-semibold text-muted-foreground">
-            <span>Low energy</span>
-            <span className="text-foreground">{energy}%</span>
-            <span>Radiant</span>
           </div>
         </section>
 
