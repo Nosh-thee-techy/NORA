@@ -40,10 +40,19 @@ function Dashboard() {
     toggleSymptom,
     phase,
     painPoints,
+    onboarded,
+    hydrated,
   } = useNora();
+  const navigate = useNavigate();
   const [mapper, setMapper] = useState(false);
   const [sos, setSos] = useState(false);
   const [wobbleNote, setWobbleNote] = useState(false);
+
+  useEffect(() => {
+    if (hydrated && !onboarded) navigate({ to: "/onboarding", replace: true });
+  }, [hydrated, onboarded, navigate]);
+
+
 
   return (
     <div data-phase={phase} className="min-h-screen bg-background pb-16">
