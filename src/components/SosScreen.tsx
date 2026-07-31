@@ -12,9 +12,9 @@ import {
   MessageCircle,
   Phone,
 } from "lucide-react";
-import { Luna } from "@/components/Luna";
 import { PoseGuideCamera } from "@/components/PoseGuideCamera";
 import { useNora } from "@/store/nora";
+import { avatarById } from "@/lib/avatars";
 import { speakText, stopSpeaking, canSpeak } from "@/lib/speech";
 import { canListen, interpretYesNo, listenOnce } from "@/lib/listen";
 import {
@@ -54,7 +54,8 @@ const CHECKS = [
 type TriagePhase = "idle" | "speaking" | "listening" | "done";
 
 export function SosScreen({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { profile, energy, symptoms, phase } = useNora();
+  const { profile } = useNora();
+  const companion = avatarById(profile.avatarId);
   const [step, setStep] = useState(0);
   const [flags, setFlags] = useState<string[]>([]);
   const [poses, setPoses] = useState(false);
@@ -231,12 +232,20 @@ export function SosScreen({ open, onClose }: { open: boolean; onClose: () => voi
                 animate={{ opacity: [0.35, 0.75, 0.35], scale: breathScale }}
                 transition={{ duration: breathDuration, repeat: Infinity, ease: "easeInOut" }}
               />
-              <Luna
-                phase={phase === "menstrual" ? "menstrual" : "luteal"}
-                energy={Math.max(energy, 40)}
-                symptoms={symptoms}
-                size={220}
-                sos
+              {/* Guardian Orb ring */}
+              <motion.div
+                aria-hidden
+                className="absolute h-60 w-60 rounded-full border-2 border-destructive/50 sm:h-72 sm:w-72"
+                animate={{ scale: breathScale, opacity: [0.45, 0.9, 0.45] }}
+                transition={{ duration: breathDuration, ease: "easeInOut", repeat: Infinity }}
+              />
+              <motion.img
+                key={`${companion.id}-${step}`}
+                src={companion.url}
+                alt={companion.name}
+                animate={{ scale: breathScale }}
+                transition={{ duration: breathDuration, ease: "easeInOut" }}
+                className="relative h-56 w-56 object-contain drop-shadow-[0_0_40px_color-mix(in_oklab,var(--sos-glow)_55%,transparent)] sm:h-64 sm:w-64"
               />
             </div>
 
@@ -249,7 +258,7 @@ export function SosScreen({ open, onClose }: { open: boolean; onClose: () => voi
               {BREATH_STEPS[step]?.label}
             </motion.p>
             <p className="text-sm text-muted-foreground">
-              4-7-8 with the Guardian Orb. You are not alone.
+              4-7-8 with {companion.name} · Guardian Orb. You are safe.
             </p>
 
             <button

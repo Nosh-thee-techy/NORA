@@ -97,15 +97,16 @@ function Dashboard() {
   useEffect(() => {
     if (!hydrated || !onboarded) return;
     setCycleDay(todayCycleDay);
+    // setCycleDay identity changes with store state — depend on profile inputs only
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, onboarded, profile.lastPeriodStart, profile.cycleLength, todayCycleDay, setCycleDay]);
+  }, [hydrated, onboarded, profile.lastPeriodStart, profile.cycleLength, todayCycleDay]);
 
-  // Keep monthly pattern logs fresh when symptoms/energy change
+  // Keep monthly pattern logs fresh when symptoms/pain change (not every energy tick)
   useEffect(() => {
     if (!hydrated || !onboarded) return;
     logTodaySignals();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, onboarded, symptoms, energy, painPoints.length]);
+  }, [hydrated, onboarded, symptoms, painPoints.length]);
 
   return (
     <div

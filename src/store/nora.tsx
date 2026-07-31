@@ -220,14 +220,24 @@ export function NoraProvider({ children }: { children: ReactNode }) {
             s.symptoms.includes("cramps") ? 7 : 0,
             s.symptoms.includes("leg-pain") ? 7 : 0,
           );
-          const monthLogs = upsertMonthLog(s.monthLogs, {
+          const patch = {
             month: currentMonthKey(),
             peakPain,
             endoBellyDays: s.symptoms.includes("endo-belly") ? 1 : 0,
             heavyFlow: s.symptoms.includes("heavy-flow"),
             missedFunction: peakPain >= 8,
-          });
-          return withRisk({ ...s, monthLogs });
+          };
+          const existing = s.monthLogs.find((m) => m.month === patch.month);
+          if (
+            existing &&
+            existing.peakPain >= patch.peakPain &&
+            existing.endoBellyDays >= patch.endoBellyDays &&
+            existing.heavyFlow === (existing.heavyFlow || patch.heavyFlow) &&
+            existing.missedFunction === (existing.missedFunction || patch.missedFunction)
+          ) {
+            return s;
+          }
+          return withRisk({ ...s, monthLogs: upsertMonthLog(s.monthLogs, patch) });
         }),
       recordPatternMonth: () =>
         setState((s) => {
