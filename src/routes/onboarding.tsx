@@ -89,7 +89,7 @@ function Onboarding() {
 
   const phase: Phase = tenderNote || (step === 2 && tenderSelected)
     ? "menstrual"
-    : STEP_PHASE[step];
+    : (STEP_PHASE[step] ?? "follicular");
 
   const patch = (p: Partial<OnboardingProfile>) => setProfile((s) => ({ ...s, ...p }));
 
@@ -305,7 +305,7 @@ function StepCycle({
             max={35}
             step={1}
             value={[profile.cycleLength ?? 28]}
-            onValueChange={([v]) => patch({ cycleLength: v })}
+            onValueChange={([v]) => patch({ cycleLength: v ?? 28 })}
           />
           <div className="mt-2 flex justify-between text-[11px] font-semibold text-muted-foreground">
             <span>21 days</span>
