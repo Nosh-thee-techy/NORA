@@ -144,6 +144,51 @@
   --phase: var(--menstrual);
 }
 
+/*
+ * Companion avatar themes — picking an emotion recolors the whole app.
+ * These override --phase (and soft background wash) while keeping phase data attributes.
+ */
+[data-avatar="sadness"] {
+  --phase: oklch(0.72 0.12 250);
+  --background: oklch(0.97 0.02 250);
+  --foreground: oklch(0.28 0.05 255);
+}
+[data-avatar="anxiety"] {
+  --phase: oklch(0.78 0.14 70);
+  --background: oklch(0.98 0.025 85);
+  --foreground: oklch(0.3 0.05 60);
+}
+[data-avatar="anger"] {
+  --phase: oklch(0.65 0.2 25);
+  --background: oklch(0.975 0.02 30);
+  --foreground: oklch(0.28 0.06 25);
+}
+[data-avatar="fear"] {
+  --phase: oklch(0.62 0.14 300);
+  --background: oklch(0.975 0.02 300);
+  --foreground: oklch(0.28 0.05 300);
+}
+[data-avatar="disgust"] {
+  --phase: oklch(0.7 0.14 145);
+  --background: oklch(0.975 0.02 145);
+  --foreground: oklch(0.28 0.05 145);
+}
+[data-avatar="envy"] {
+  --phase: oklch(0.72 0.12 195);
+  --background: oklch(0.975 0.02 195);
+  --foreground: oklch(0.28 0.05 200);
+}
+[data-avatar="embarrassment"] {
+  --phase: oklch(0.72 0.14 10);
+  --background: oklch(0.98 0.02 10);
+  --foreground: oklch(0.3 0.05 10);
+}
+[data-avatar="ennui"] {
+  --phase: oklch(0.62 0.06 270);
+  --background: oklch(0.97 0.01 270);
+  --foreground: oklch(0.3 0.03 270);
+}
+
 .dark,
 [data-mode="sos"] {
   --background: oklch(0.16 0.005 280);

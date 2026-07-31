@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { MessageCircle, Stethoscope, ChevronLeft, ChevronRight } from "lucide-react";
 import { Luna } from "@/components/Luna";
@@ -9,7 +9,7 @@ import { PainMapper } from "@/components/PainMapper";
 import { SosScreen } from "@/components/SosScreen";
 import { GemmaChat } from "@/components/GemmaChat";
 import { useNora } from "@/store/nora";
-import { PHASE_META, SYMPTOMS, CYCLE_LENGTH, phaseForDay } from "@/lib/cycle";
+import { PHASE_META, SYMPTOMS, buildCycleWindow } from "@/lib/cycle";
 import { Slider } from "@/components/ui/slider";
 
 export const Route = createFileRoute("/")({
@@ -52,14 +52,18 @@ function Dashboard() {
   const [sos, setSos] = useState(false);
   const [wobbleNote, setWobbleNote] = useState(false);
 
+  const cycleWindow = useMemo(() => buildCycleWindow(profile), [profile]);
+
   useEffect(() => {
     if (hydrated && !onboarded) navigate({ to: "/onboarding", replace: true });
   }, [hydrated, onboarded, navigate]);
 
-
-
   return (
-    <div data-phase={phase} className="min-h-screen bg-background pb-16">
+    <div
+      data-phase={phase}
+      data-avatar={profile.avatarId}
+      className="min-h-screen bg-background pb-16 transition-colors duration-500"
+    >
       <TopNav onSos={() => setSos(true)} />
 
       <main className="mx-auto max-w-xl px-4">
@@ -84,7 +88,7 @@ function Dashboard() {
             {wobbleNote ? "Luna wobbles softly. I'm right here. 💛" : PHASE_META[phase].blurb}
           </motion.p>
           <h1 className="relative mt-3 text-center text-2xl font-extrabold tracking-tight">
-            How are you feeling today, Sarah?
+            How are you feeling today?
           </h1>
           <div className="relative mt-3 flex items-center gap-3 rounded-full bg-card/70 px-3 py-2">
             <img
@@ -101,10 +105,18 @@ function Dashboard() {
           </div>
         </section>
 
-        {/* Cycle calendar strip */}
+        {/* Cycle calendar — anchored to last period start, not month start */}
         <section className="mt-4 rounded-4xl glass-panel p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold">Cycle calendar</h2>
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-bold">Cycle calendar</h2>
+              <p className="text-[11px] font-semibold text-muted-foreground">
+                Aligned to your last period
+                {cycleWindow.cycleStart
+                  ? ` · started ${cycleWindow.cycleStart.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+                  : ""}
+              </p>
+            </div>
             <div className="flex gap-1">
               <button
                 aria-label="Previous day"
@@ -122,26 +134,53 @@ function Dashboard() {
               </button>
             </div>
           </div>
+
           <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
-            {Array.from({ length: CYCLE_LENGTH }, (_, i) => i + 1).map((d) => {
-              const p = phaseForDay(d);
-              const active = d === cycleDay;
+            {cycleWindow.days.map((cell) => {
+              const active = cell.cycleDay === cycleDay;
+              const dayNum = cell.date.getDate();
               return (
                 <button
-                  key={d}
-                  data-phase={p}
-                  onClick={() => setCycleDay(d)}
-                  className={`h-9 w-9 shrink-0 rounded-2xl text-xs font-bold transition-transform ${
+                  key={`${cell.cycleDay}-${dayNum}`}
+                  data-phase={cell.phase}
+                  onClick={() => setCycleDay(cell.cycleDay)}
+                  title={`Cycle day ${cell.cycleDay} · ${cell.date.toLocaleDateString()}`}
+                  className={`flex h-12 w-10 shrink-0 flex-col items-center justify-center rounded-2xl text-[10px] font-bold transition-transform ${
                     active
                       ? "phase-gradient text-primary-foreground scale-110"
-                      : "bg-accent text-accent-foreground"
+                      : cell.isPeriod
+                        ? "bg-menstrual/25 text-foreground ring-1 ring-menstrual/40"
+                        : "bg-accent text-accent-foreground"
                   }`}
                 >
-                  {d}
+                  <span className="text-[9px] font-semibold opacity-80">
+                    {cell.date.toLocaleDateString(undefined, { weekday: "narrow" })}
+                  </span>
+                  <span className="text-xs">{dayNum}</span>
+                  {cell.isToday && (
+                    <span className="mt-0.5 h-1 w-1 rounded-full bg-current" />
+                  )}
                 </button>
               );
             })}
           </div>
+
+          <p className="mt-3 text-[11px] font-semibold leading-relaxed text-muted-foreground">
+            {cycleWindow.insight}
+          </p>
+          {cycleWindow.nextPeriodStart && (
+            <p className="mt-1 text-[11px] font-bold text-phase-deep">
+              Next period expected around{" "}
+              {cycleWindow.nextPeriodStart.toLocaleDateString(undefined, {
+                month: "long",
+                day: "numeric",
+              })}
+              {profile.periodLength
+                ? ` for about ${profile.periodLength} day${profile.periodLength === 1 ? "" : "s"}`
+                : ""}
+              .
+            </p>
+          )}
         </section>
 
         {/* Check-in slider */}
@@ -222,7 +261,7 @@ function Dashboard() {
 
       <GemmaChat />
 
-            <PainMapper open={mapper} onClose={() => setMapper(false)} />
+      <PainMapper open={mapper} onClose={() => setMapper(false)} />
       <SosScreen open={sos} onClose={() => setSos(false)} />
     </div>
   );

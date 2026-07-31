@@ -6,6 +6,7 @@ import {
   CalendarIcon,
   Check,
   ChevronLeft,
+  ChevronRight,
   Heart,
   MessageCircle,
   ShieldCheck,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import { Luna } from "@/components/Luna";
 import { Confetti } from "@/components/Confetti";
+import { AvatarTheme } from "@/components/AvatarTheme";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -21,8 +23,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useNora, DEFAULT_PROFILE, type OnboardingProfile } from "@/store/nora";
-import type { Phase } from "@/lib/cycle";
-import { AVATARS } from "@/lib/avatars";
+import {
+  buildCycleWindow,
+  type Phase,
+} from "@/lib/cycle";
+import { AVATARS, avatarIndex } from "@/lib/avatars";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/onboarding")({
@@ -124,11 +129,13 @@ function Onboarding() {
   return (
     <div
       data-phase={phase}
-      className="relative flex min-h-screen flex-col overflow-hidden bg-background"
+      data-avatar={profile.avatarId}
+      className="relative flex min-h-screen flex-col overflow-hidden bg-background transition-colors duration-500"
     >
+      <AvatarTheme avatarId={profile.avatarId} />
       <motion.div
         aria-hidden
-        key={phase}
+        key={`${phase}-${profile.avatarId}`}
         className="pointer-events-none absolute inset-0 ambient-glow"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -222,17 +229,19 @@ function StepWelcome({
   onPick: (id: string) => void;
   onStart: () => void;
 }) {
+  const index = avatarIndex(avatarId);
+  const avatar = AVATARS[index]!;
+  const [slideDir, setSlideDir] = useState(0);
+
+  const goAvatar = (nextIndex: number, dir: number) => {
+    const wrapped = (nextIndex + AVATARS.length) % AVATARS.length;
+    setSlideDir(dir);
+    onPick(AVATARS[wrapped]!.id);
+  };
+
   return (
     <div className="flex flex-1 flex-col items-center">
-      <motion.div
-        className="mt-4"
-        animate={{ y: [0, -12, 0] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <Luna phase="follicular" energy={70} symptoms={[]} size={170} />
-      </motion.div>
-
-      <h1 className="mt-1 text-center text-3xl font-extrabold tracking-tight text-foreground">
+      <h1 className="mt-6 text-center text-3xl font-extrabold tracking-tight text-foreground">
         Meet Bloom—Your Cycle &amp; Body Companion.
       </h1>
       <p className="mt-3 text-center text-sm leading-relaxed text-muted-foreground">
@@ -244,46 +253,79 @@ function StepWelcome({
         <p className="text-center text-sm font-bold text-foreground">
           Pick the companion that feels like you today
         </p>
-        <div className="mt-3 grid grid-cols-4 gap-2.5">
-          {AVATARS.map((a) => {
-            const active = a.id === avatarId;
-            return (
-              <button
-                key={a.id}
-                type="button"
-                aria-pressed={active}
-                onClick={() => onPick(a.id)}
-                className={cn(
-                  "group flex flex-col items-center gap-1 rounded-2xl border p-2 transition-all",
-                  active
-                    ? "border-transparent bg-accent shadow-[var(--shadow-soft)]"
-                    : "border-border bg-card hover:bg-accent/40",
-                )}
+        <p className="mt-1 text-center text-xs font-semibold text-muted-foreground">
+          One at a time — use the arrows to meet each emotion
+        </p>
+
+        <div className="mt-5 flex items-center gap-2">
+          <button
+            type="button"
+            aria-label="Previous companion"
+            onClick={() => goAvatar(index - 1, -1)}
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground shadow-[var(--shadow-soft)] transition-transform active:scale-95"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+
+          <div className="relative min-w-0 flex-1">
+            <AnimatePresence mode="wait" custom={slideDir}>
+              <motion.div
+                key={avatar.id}
+                custom={slideDir}
+                initial={{ opacity: 0, x: slideDir * 40, scale: 0.96 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: slideDir * -40, scale: 0.96 }}
+                transition={{ duration: 0.28, ease: "easeOut" }}
+                className="flex flex-col items-center"
               >
-                <span
-                  className={cn(
-                    "relative grid aspect-square w-full place-items-center overflow-hidden rounded-xl bg-muted",
-                    active && "ring-2 ring-primary",
-                  )}
-                >
+                <div className="relative grid aspect-square w-full max-w-[220px] place-items-center overflow-hidden rounded-[2rem] bg-card shadow-[var(--shadow-soft)] ring-2 ring-primary/40">
                   <img
-                    src={a.url}
-                    alt={a.name}
-                    loading="lazy"
-                    className="h-full w-full object-contain"
+                    src={avatar.url}
+                    alt={avatar.name}
+                    className="h-full w-full object-contain p-3"
                   />
-                  {active && (
-                    <span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full phase-gradient text-primary-foreground">
-                      <Check className="h-2.5 w-2.5" />
-                    </span>
-                  )}
-                </span>
-                <span className="text-[10px] font-bold leading-tight text-foreground">
-                  {a.name}
-                </span>
-              </button>
-            );
-          })}
+                  <span className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full phase-gradient text-primary-foreground">
+                    <Check className="h-3.5 w-3.5" />
+                  </span>
+                </div>
+
+                <h2 className="mt-4 text-center text-xl font-extrabold tracking-tight text-foreground">
+                  {avatar.name}
+                </h2>
+                <p className="mt-1 text-center text-xs font-bold uppercase tracking-wide text-phase-deep">
+                  {avatar.mood}
+                </p>
+                <p className="mt-2 max-w-sm text-center text-sm leading-relaxed text-muted-foreground">
+                  {avatar.description}
+                </p>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          <button
+            type="button"
+            aria-label="Next companion"
+            onClick={() => goAvatar(index + 1, 1)}
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground shadow-[var(--shadow-soft)] transition-transform active:scale-95"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="mt-4 flex justify-center gap-1.5">
+          {AVATARS.map((a, i) => (
+            <button
+              key={a.id}
+              type="button"
+              aria-label={`Show ${a.name}`}
+              aria-current={i === index}
+              onClick={() => goAvatar(i, i > index ? 1 : -1)}
+              className={cn(
+                "h-1.5 rounded-full transition-all",
+                i === index ? "w-6 phase-gradient" : "w-1.5 bg-muted",
+              )}
+            />
+          ))}
         </div>
       </div>
 
@@ -292,7 +334,7 @@ function StepWelcome({
         100% Private • Offline-First Data
       </span>
 
-      <BottomAction label="Get Started" onClick={onStart} />
+      <BottomAction label={`Continue with ${avatar.name}`} onClick={onStart} />
     </div>
   );
 }
@@ -397,8 +439,15 @@ function StepCycle({
           </div>
         </section>
 
+        {profile.lastPeriodStart && (
+          <p className="rounded-2xl bg-accent/60 px-4 py-3 text-center text-xs font-semibold leading-relaxed text-accent-foreground">
+            {buildCycleWindow(profile).insight}
+          </p>
+        )}
+
         <p className="text-center text-xs font-semibold text-muted-foreground">
-          Don't worry if it's irregular—Luna adapts to you.
+          Don't worry if it's irregular—Luna adapts to you. We never assume your period
+          starts on the 1st of the month.
         </p>
       </div>
 
