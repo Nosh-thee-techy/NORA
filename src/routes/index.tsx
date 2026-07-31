@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { MessageCircle, Stethoscope, ChevronLeft, ChevronRight } from "lucide-react";
 import { Luna } from "@/components/Luna";
@@ -40,10 +40,19 @@ function Dashboard() {
     toggleSymptom,
     phase,
     painPoints,
+    onboarded,
+    hydrated,
   } = useNora();
+  const navigate = useNavigate();
   const [mapper, setMapper] = useState(false);
   const [sos, setSos] = useState(false);
   const [wobbleNote, setWobbleNote] = useState(false);
+
+  useEffect(() => {
+    if (hydrated && !onboarded) navigate({ to: "/onboarding", replace: true });
+  }, [hydrated, onboarded, navigate]);
+
+
 
   return (
     <div data-phase={phase} className="min-h-screen bg-background pb-16">
