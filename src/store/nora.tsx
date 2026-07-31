@@ -34,6 +34,8 @@ export type OnboardingProfile = {
   dailyCheckin: boolean;
   emergencyContact: string;
   avatarId: string;
+  /** Why the user chose this companion during onboarding */
+  avatarReasons: string[];
 };
 
 type NoraState = {
@@ -57,6 +59,7 @@ export const DEFAULT_PROFILE: OnboardingProfile = {
   dailyCheckin: true,
   emergencyContact: "",
   avatarId: DEFAULT_AVATAR_ID,
+  avatarReasons: [],
 };
 
 const DEFAULT_STATE: NoraState = {
@@ -95,10 +98,9 @@ type Ctx = NoraState & {
   addPainPoint: (p: PainPoint) => void;
   updatePainPoint: (id: string, patch: Partial<PainPoint>) => void;
   removePainPoint: (id: string) => void;
-  completeOnboarding: (profile: OnboardingProfile) => void;
+  completeOnboarding: (profile: OnboardingProfile, opts?: { energy?: number }) => void;
   resetOnboarding: () => void;
   hydrated: boolean;
-
 };
 
 const NoraContext = createContext<Ctx | null>(null);
@@ -110,7 +112,14 @@ export function NoraProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setState({ ...DEFAULT_STATE, ...JSON.parse(raw) });
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<NoraState>;
+        setState({
+          ...DEFAULT_STATE,
+          ...parsed,
+          profile: { ...DEFAULT_PROFILE, ...(parsed.profile ?? {}) },
+        });
+      }
     } catch {
       /* offline-safe: fall back to defaults */
     }
@@ -158,11 +167,12 @@ export function NoraProvider({ children }: { children: ReactNode }) {
         })),
       removePainPoint: (id) =>
         setState((s) => ({ ...s, painPoints: s.painPoints.filter((p) => p.id !== id) })),
-      completeOnboarding: (profile) =>
+      completeOnboarding: (profile, opts) =>
         setState((s) => ({
           ...s,
           onboarded: true,
           profile,
+          energy: opts?.energy ?? s.energy,
           cycleDay: cycleDayFromProfile(profile),
           symptoms: mapProfileSymptoms(profile.profileSymptoms),
         })),

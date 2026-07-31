@@ -27,7 +27,7 @@ import {
   buildCycleWindow,
   type Phase,
 } from "@/lib/cycle";
-import { AVATARS, avatarIndex } from "@/lib/avatars";
+import { AVATARS, avatarById, avatarIndex } from "@/lib/avatars";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/onboarding")({
@@ -37,7 +37,7 @@ export const Route = createFileRoute("/onboarding")({
       {
         name: "description",
         content:
-          "A gentle 4-step setup: share your cycle rhythm, tell Luna how your period days feel, and link WhatsApp for 3-second daily check-ins.",
+          "A gentle setup: pick a companion, share why, check in, then align your cycle rhythm and support preferences.",
       },
       {
         property: "og:title",
@@ -69,7 +69,17 @@ const SYMPTOM_OPTIONS = [
 
 const COUNTRY_CODES = ["+1", "+44", "+27", "+31", "+33", "+49", "+61", "+91", "+234"];
 
-const STEP_PHASE: Phase[] = ["follicular", "follicular", "luteal", "ovulation"];
+const TOTAL_STEPS = 5;
+const STEP_PHASE: Phase[] = ["follicular", "follicular", "follicular", "luteal", "ovulation"];
+
+const AVATAR_WHY_OPTIONS = [
+  { id: "feels-like-me", label: "It matches how I feel right now" },
+  { id: "needs-support", label: "I need this kind of support today" },
+  { id: "cycle-pattern", label: "This shows up a lot in my cycle" },
+  { id: "early-signals", label: "I want help noticing early signals" },
+  { id: "name-feelings", label: "I'm learning to name my feelings" },
+  { id: "just-drawn", label: "I just felt drawn to them" },
+];
 
 function Onboarding() {
   const navigate = useNavigate();
@@ -78,6 +88,7 @@ function Onboarding() {
   const [direction, setDirection] = useState(1);
   const [celebrating, setCelebrating] = useState(false);
   const [tenderNote, setTenderNote] = useState(false);
+  const [energy, setEnergy] = useState(55);
   const [profile, setProfile] = useState<OnboardingProfile>({
     ...DEFAULT_PROFILE,
     lastPeriodStart: format(new Date(), "yyyy-MM-dd"),
@@ -93,7 +104,7 @@ function Onboarding() {
     [profile.profileSymptoms],
   );
 
-  const phase: Phase = tenderNote || (step === 2 && tenderSelected)
+  const phase: Phase = tenderNote || (step === 3 && tenderSelected)
     ? "menstrual"
     : (STEP_PHASE[step] ?? "follicular");
 
@@ -120,9 +131,21 @@ function Onboarding() {
     });
   };
 
+  const toggleReason = (id: string) => {
+    setProfile((s) => {
+      const has = s.avatarReasons.includes(id);
+      return {
+        ...s,
+        avatarReasons: has
+          ? s.avatarReasons.filter((x) => x !== id)
+          : [...s.avatarReasons, id],
+      };
+    });
+  };
+
   const finish = () => {
     setCelebrating(true);
-    completeOnboarding(profile);
+    completeOnboarding(profile, { energy });
     setTimeout(() => navigate({ to: "/", replace: true }), 1500);
   };
 
@@ -159,7 +182,7 @@ function Onboarding() {
             <span className="h-8 w-8 shrink-0" />
           )}
           <div className="flex min-w-0 flex-1 gap-1.5">
-            {[0, 1, 2, 3].map((i) => (
+            {Array.from({ length: TOTAL_STEPS }, (_, i) => (
               <div key={i} className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
                 <motion.div
                   className="h-full rounded-full phase-gradient"
@@ -171,7 +194,7 @@ function Onboarding() {
             ))}
           </div>
           <span className="shrink-0 text-xs font-bold text-muted-foreground">
-            {step + 1}/4
+            {step + 1}/{TOTAL_STEPS}
           </span>
         </div>
       </header>
@@ -190,25 +213,36 @@ function Onboarding() {
             {step === 0 && (
               <StepWelcome
                 avatarId={profile.avatarId}
-                onPick={(id) => patch({ avatarId: id })}
+                onPick={(id) => patch({ avatarId: id, avatarReasons: [] })}
                 onStart={() => go(1)}
               />
             )}
 
             {step === 1 && (
-              <StepCycle profile={profile} patch={patch} onContinue={() => go(2)} />
+              <StepAvatarWhy
+                avatarId={profile.avatarId}
+                reasons={profile.avatarReasons}
+                onToggleReason={toggleReason}
+                energy={energy}
+                onEnergy={setEnergy}
+                onContinue={() => go(2)}
+              />
             )}
 
             {step === 2 && (
+              <StepCycle profile={profile} patch={patch} onContinue={() => go(3)} />
+            )}
+
+            {step === 3 && (
               <StepSymptoms
                 selected={profile.profileSymptoms}
                 onToggle={toggleSymptom}
                 tenderNote={tenderNote}
-                onContinue={() => go(3)}
+                onContinue={() => go(4)}
               />
             )}
 
-            {step === 3 && (
+            {step === 4 && (
               <StepConnect profile={profile} patch={patch} onFinish={finish} />
             )}
           </motion.div>
@@ -339,7 +373,111 @@ function StepWelcome({
   );
 }
 
-/* ---------------- Step 2 ---------------- */
+/* ---------------- Step 2: why this avatar + check-in ---------------- */
+
+function StepAvatarWhy({
+  avatarId,
+  reasons,
+  onToggleReason,
+  energy,
+  onEnergy,
+  onContinue,
+}: {
+  avatarId: string;
+  reasons: string[];
+  onToggleReason: (id: string) => void;
+  energy: number;
+  onEnergy: (v: number) => void;
+  onContinue: () => void;
+}) {
+  const avatar = avatarById(avatarId);
+  const canContinue = reasons.length > 0;
+
+  return (
+    <div className="flex flex-1 flex-col">
+      <div className="mt-4 flex items-center gap-3">
+        <img
+          src={avatar.url}
+          alt=""
+          aria-hidden
+          className="h-16 w-16 object-contain drop-shadow-[0_10px_24px_color-mix(in_oklab,var(--phase)_30%,transparent)]"
+        />
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-phase-deep">
+            You chose {avatar.name}
+          </p>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-foreground">
+            Why this companion?
+          </h1>
+        </div>
+      </div>
+
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+        A few quick truths help {avatar.name} hold space with you — pick everything that fits.
+      </p>
+
+      <div className="mt-5 grid gap-2">
+        {AVATAR_WHY_OPTIONS.map((opt) => {
+          const active = reasons.includes(opt.id);
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onToggleReason(opt.id)}
+              className={cn(
+                "flex items-center gap-3 rounded-2xl border px-3.5 py-3 text-left text-sm font-bold transition-all",
+                active
+                  ? "border-transparent bg-accent text-accent-foreground shadow-[var(--shadow-soft)]"
+                  : "border-border bg-card/50 text-foreground hover:bg-accent/40",
+              )}
+            >
+              <span
+                className={cn(
+                  "grid h-5 w-5 shrink-0 place-items-center rounded-full border",
+                  active
+                    ? "border-transparent phase-gradient text-primary-foreground"
+                    : "border-border",
+                )}
+              >
+                {active && <Check className="h-3 w-3" />}
+              </span>
+              <span className="min-w-0">{opt.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <section className="mt-6 rounded-3xl glass-panel p-4">
+        <h2 className="text-sm font-bold">3-second check-in</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Slide to tune how {avatar.name} holds space with you today.
+        </p>
+        <Slider
+          value={[energy]}
+          min={0}
+          max={100}
+          step={1}
+          onValueChange={(v) => onEnergy(v[0] ?? 0)}
+          className="mt-4"
+        />
+        <div className="mt-2 flex justify-between text-[11px] font-semibold text-muted-foreground">
+          <span>Low energy</span>
+          <span className="text-foreground">{energy}%</span>
+          <span>Radiant</span>
+        </div>
+      </section>
+
+      <BottomAction
+        label={canContinue ? "Continue" : "Pick at least one reason"}
+        onClick={onContinue}
+        disabled={!canContinue}
+      />
+    </div>
+  );
+}
+
+/* ---------------- Step 3 ---------------- */
 
 function StepCycle({
   profile,
@@ -663,16 +801,19 @@ function BottomAction({
   label,
   onClick,
   icon,
+  disabled,
 }: {
   label: string;
   onClick: () => void;
   icon?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <div className="sticky bottom-0 mt-auto pt-8 pb-2">
       <Button
         size="lg"
         onClick={onClick}
+        disabled={disabled}
         className="h-14 w-full rounded-full text-base font-extrabold shadow-[var(--shadow-soft)]"
       >
         {icon && <Sparkles className="mr-2 h-5 w-5" />}
