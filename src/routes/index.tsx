@@ -52,6 +52,7 @@ function Dashboard() {
     resilienceUnlocked,
     logTodaySignals,
     recordPatternMonth,
+    resetOnboarding,
     endoRiskReason,
     patternMonthsLogged,
     monthLogs,
@@ -107,6 +108,22 @@ function Dashboard() {
     logTodaySignals();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, onboarded, symptoms, painPoints.length]);
+
+  if (!hydrated) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background text-sm font-semibold text-muted-foreground">
+        Loading Nora…
+      </div>
+    );
+  }
+
+  if (!onboarded) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background text-sm font-semibold text-muted-foreground">
+        Taking you to setup…
+      </div>
+    );
+  }
 
   return (
     <div
@@ -179,6 +196,16 @@ function Dashboard() {
             <p className="mt-1 max-w-[22rem] text-center text-sm leading-relaxed text-muted-foreground">
               {companion.description}
             </p>
+            <button
+              type="button"
+              onClick={() => {
+                resetOnboarding();
+                navigate({ to: "/onboarding" });
+              }}
+              className="mt-3 text-[11px] font-bold text-phase-deep underline"
+            >
+              Change companion / redo setup
+            </button>
           </motion.div>
         </section>
 
