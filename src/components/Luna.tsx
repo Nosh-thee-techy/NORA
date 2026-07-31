@@ -82,7 +82,7 @@ export function Luna({
         viewBox="0 0 200 200"
         width={size}
         height={size}
-        className="relative"
+        className="relative text-phase"
         key={wobble}
         initial={{ rotate: 0 }}
         animate={{ rotate: [0, -4, 3, -2, 0], scale }}
@@ -91,8 +91,8 @@ export function Luna({
         <defs>
           <radialGradient id={fillId} cx="42%" cy="34%">
             <stop offset="0%" stopColor="white" stopOpacity="0.55" />
-            <stop offset="55%" stopColor="var(--phase)" stopOpacity="0.95" />
-            <stop offset="100%" stopColor="var(--phase-deep)" stopOpacity="0.95" />
+            <stop offset="55%" stopColor="currentColor" stopOpacity="0.95" />
+            <stop offset="100%" stopColor="currentColor" stopOpacity="0.6" />
           </radialGradient>
           <filter id={blurId} x="-40%" y="-40%" width="180%" height="180%">
             <feGaussianBlur stdDeviation="6" />
