@@ -100,26 +100,18 @@ export function Luna({
           </filter>
         </defs>
 
-        <motion.path
+        <path
           d={SHAPES[phase]}
           fill="url(#luna-fill)"
           filter="url(#luna-blur)"
           opacity={0.55}
-          animate={{ d: SHAPES[phase] }}
-          transition={{ duration: 0.9, ease: "easeInOut" }}
         />
         <motion.path
           d={SHAPES[phase]}
           fill="url(#luna-fill)"
-          animate={{
-            d: SHAPES[phase],
-            scale: sos ? [1, 1.06, 1.06, 1] : [1, 1.03, 1],
-          }}
+          animate={{ scale: sos ? [1, 1.06, 1.06, 1] : [1, 1.03, 1] }}
           style={{ transformOrigin: "100px 100px" }}
-          transition={{
-            d: { duration: 0.9, ease: "easeInOut" },
-            scale: { duration: pulseDuration, repeat: Infinity, ease: "easeInOut" },
-          }}
+          transition={{ duration: pulseDuration, repeat: Infinity, ease: "easeInOut" }}
         />
 
         {/* face */}
@@ -148,16 +140,18 @@ export function Luna({
                 cy={eyeY}
                 rx="5"
                 ry="7"
-                animate={{ ry: [7, 1, 7] }}
-                transition={{ duration: 5, repeat: Infinity, repeatDelay: 2 }}
+                style={{ transformOrigin: `87px ${eyeY}px` }}
+                animate={{ scaleY: [1, 0.15, 1] }}
+                transition={{ duration: 0.35, repeat: Infinity, repeatDelay: 4.5 }}
               />
               <motion.ellipse
                 cx="113"
                 cy={eyeY}
                 rx="5"
                 ry="7"
-                animate={{ ry: [7, 1, 7] }}
-                transition={{ duration: 5, repeat: Infinity, repeatDelay: 2 }}
+                style={{ transformOrigin: `113px ${eyeY}px` }}
+                animate={{ scaleY: [1, 0.15, 1] }}
+                transition={{ duration: 0.35, repeat: Infinity, repeatDelay: 4.5 }}
               />
             </>
           )}
