@@ -12,10 +12,11 @@ export function TopNav({ onSos }: { onSos: () => void }) {
     <header className="sticky top-0 z-30 glass-panel rounded-b-3xl px-4 py-3">
       <div className="mx-auto flex max-w-xl items-center gap-3">
         <Link to="/" className="flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-2xl phase-gradient text-primary-foreground">
-            <Sprout className="h-5 w-5" />
-          </span>
-          <span className="text-lg font-extrabold tracking-tight">Bloom</span>
+          <img 
+            src="/nora-logo.png" 
+            alt="Nora" 
+            className="h-10 w-auto object-contain rounded-xl mix-blend-multiply dark:mix-blend-normal" 
+          />
         </Link>
 
         <div className="ml-auto flex items-center gap-2">
