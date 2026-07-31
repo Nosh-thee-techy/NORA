@@ -68,7 +68,10 @@ type Ctx = NoraState & {
   addPainPoint: (p: PainPoint) => void;
   updatePainPoint: (id: string, patch: Partial<PainPoint>) => void;
   removePainPoint: (id: string) => void;
+  completeOnboarding: (profile: OnboardingProfile) => void;
+  resetOnboarding: () => void;
   hydrated: boolean;
+
 };
 
 const NoraContext = createContext<Ctx | null>(null);
