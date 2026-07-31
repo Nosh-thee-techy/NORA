@@ -83,7 +83,8 @@ const AVATAR_WHY_OPTIONS = [
 
 function Onboarding() {
   const navigate = useNavigate();
-  const { completeOnboarding, onboarded, hydrated } = useNora();
+  const { completeOnboarding, updateProfile, onboarded, hydrated, profile: savedProfile, energy: savedEnergy } =
+    useNora();
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [celebrating, setCelebrating] = useState(false);
@@ -93,10 +94,28 @@ function Onboarding() {
     ...DEFAULT_PROFILE,
     lastPeriodStart: format(new Date(), "yyyy-MM-dd"),
   });
+  const [draftReady, setDraftReady] = useState(false);
+
+  // Restore any in-progress / prior profile so avatar choice sticks across reloads
+  useEffect(() => {
+    if (!hydrated) return;
+    setProfile({
+      ...DEFAULT_PROFILE,
+      ...savedProfile,
+      lastPeriodStart:
+        savedProfile.lastPeriodStart ?? format(new Date(), "yyyy-MM-dd"),
+      avatarId: savedProfile.avatarId || DEFAULT_PROFILE.avatarId,
+      avatarReasons: savedProfile.avatarReasons ?? [],
+    });
+    setEnergy(savedEnergy || 55);
+    setDraftReady(true);
+  }, [hydrated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (hydrated && onboarded) navigate({ to: "/", replace: true });
-  }, [hydrated, onboarded, navigate]);
+    if (hydrated && draftReady && onboarded && !celebrating) {
+      navigate({ to: "/", replace: true });
+    }
+  }, [hydrated, draftReady, onboarded, celebrating, navigate]);
 
   const tenderSelected = useMemo(
     () =>
@@ -108,7 +127,11 @@ function Onboarding() {
     ? "menstrual"
     : (STEP_PHASE[step] ?? "follicular");
 
-  const patch = (p: Partial<OnboardingProfile>) => setProfile((s) => ({ ...s, ...p }));
+  const patch = (p: Partial<OnboardingProfile>) => {
+    setProfile((s) => ({ ...s, ...p }));
+    // Persist companion choice immediately so it survives refresh mid-onboarding
+    updateProfile(p);
+  };
 
   const go = (next: number) => {
     setDirection(next > step ? 1 : -1);
@@ -132,15 +155,12 @@ function Onboarding() {
   };
 
   const toggleReason = (id: string) => {
-    setProfile((s) => {
-      const has = s.avatarReasons.includes(id);
-      return {
-        ...s,
-        avatarReasons: has
-          ? s.avatarReasons.filter((x) => x !== id)
-          : [...s.avatarReasons, id],
-      };
-    });
+    const has = profile.avatarReasons.includes(id);
+    const avatarReasons = has
+      ? profile.avatarReasons.filter((x) => x !== id)
+      : [...profile.avatarReasons, id];
+    setProfile((s) => ({ ...s, avatarReasons }));
+    updateProfile({ avatarReasons });
   };
 
   const finish = () => {
@@ -148,6 +168,14 @@ function Onboarding() {
     completeOnboarding(profile, { energy });
     setTimeout(() => navigate({ to: "/", replace: true }), 1500);
   };
+
+  if (!hydrated || !draftReady) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background text-sm font-semibold text-muted-foreground">
+        Preparing your setup…
+      </div>
+    );
+  }
 
   return (
     <div
