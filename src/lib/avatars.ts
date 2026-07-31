@@ -14,7 +14,7 @@ export const AVATARS: AvatarOption[] = [
     mood: "Tender & honest",
     description:
       "Soft and steady. Sadness helps you name hard feelings without rushing past them — a gentle companion for tender cycle days.",
-    url: "/avatars/sadness.jpg",
+    url: "/avatars/sadness.png",
   },
   {
     id: "anxiety",
@@ -22,7 +22,7 @@ export const AVATARS: AvatarOption[] = [
     mood: "Wired & alert",
     description:
       "Buzzing with care. Anxiety notices every signal early so you can plan rest, support, and check-ins before overwhelm hits.",
-    url: "/avatars/anxiety.jpg",
+    url: "/avatars/anxiety.png",
   },
   {
     id: "anger",
@@ -30,7 +30,7 @@ export const AVATARS: AvatarOption[] = [
     mood: "Fired up",
     description:
       "Protective fire. Anger validates pain that gets minimized and helps you advocate for your body when something isn’t right.",
-    url: "/avatars/anger.jpg",
+    url: "/avatars/anger.png",
   },
   {
     id: "fear",
@@ -38,7 +38,7 @@ export const AVATARS: AvatarOption[] = [
     mood: "On edge",
     description:
       "Cautious and prepared. Fear keeps you safe by spotting flare patterns and reminding you it’s okay to slow down.",
-    url: "/avatars/fear.jpg",
+    url: "/avatars/fear.png",
   },
   {
     id: "disgust",
@@ -46,7 +46,7 @@ export const AVATARS: AvatarOption[] = [
     mood: "Over it",
     description:
       "Clear boundaries. Disgust helps you reject what drains you — guilt, push-through culture, and anything that ignores your limits.",
-    url: "/avatars/disgust.jpg",
+    url: "/avatars/disgust.png",
   },
   {
     id: "envy",
@@ -54,7 +54,7 @@ export const AVATARS: AvatarOption[] = [
     mood: "Wistful",
     description:
       "Honest wanting. Envy names the ease or comfort you crave and turns comparison into a clue about what your body needs.",
-    url: "/avatars/envy.jpg",
+    url: "/avatars/envy.png",
   },
   {
     id: "embarrassment",
@@ -62,7 +62,7 @@ export const AVATARS: AvatarOption[] = [
     mood: "Cocooning",
     description:
       "Quiet and private. Embarrassment makes space for messy period truths without shame — your story stays yours.",
-    url: "/avatars/embarrassment.jpg",
+    url: "/avatars/embarrassment.png",
   },
   {
     id: "ennui",
@@ -70,7 +70,7 @@ export const AVATARS: AvatarOption[] = [
     mood: "Low battery",
     description:
       "Low-power mode. Ennui honors flat, foggy days and reminds you that rest is part of the cycle, not a failure.",
-    url: "/avatars/ennui.jpg",
+    url: "/avatars/ennui.png",
   },
 ];
 
