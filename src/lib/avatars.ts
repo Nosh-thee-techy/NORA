@@ -86,7 +86,12 @@ export const AVATARS: AvatarOption[] = [
 export const DEFAULT_AVATAR_ID = "sadness";
 
 export function avatarById(id: string | null | undefined): AvatarOption {
-  return AVATARS.find((a) => a.id === id) ?? AVATARS[0]!;
+  const found = AVATARS.find((a) => a.id === id) ?? AVATARS[0]!;
+  // Prefer bundled asset URL; keep public path as last-resort string if import ever empty
+  if (!found.url) {
+    return { ...found, url: `/avatars/${found.id}.png` };
+  }
+  return found;
 }
 
 export function avatarIndex(id: string | null | undefined): number {
