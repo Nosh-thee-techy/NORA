@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Check, Flame, Thermometer, Zap, Droplets } from "lucide-react";
+import { X, Check, Flame, Thermometer, Zap, Droplets, Camera } from "lucide-react";
 import { useNora } from "@/store/nora";
 import { avatarById } from "@/lib/avatars";
+import { PoseGuideCamera } from "@/components/PoseGuideCamera";
 
 const BREATH_STEPS = [
   { label: "Breathe in", seconds: 4 },
@@ -22,6 +23,7 @@ export function SosScreen({ open, onClose }: { open: boolean; onClose: () => voi
   const [step, setStep] = useState(0);
   const [flags, setFlags] = useState<string[]>([]);
   const [poses, setPoses] = useState(false);
+  const [cameraGuide, setCameraGuide] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -140,10 +142,20 @@ export function SosScreen({ open, onClose }: { open: boolean; onClose: () => voi
             </div>
 
             <button
-              onClick={() => setPoses((p) => !p)}
-              className="mt-5 w-full rounded-2xl bg-destructive py-3.5 text-sm font-bold text-destructive-foreground shadow-[0_0_34px_-8px_var(--sos-glow)]"
+              type="button"
+              onClick={() => setCameraGuide(true)}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-destructive py-3.5 text-sm font-bold text-destructive-foreground shadow-[0_0_34px_-8px_var(--sos-glow)]"
             >
-              Guide Me Through 3D Pelvic Relief Poses
+              <Camera className="h-5 w-5" />
+              Open Camera Pose & Breath Guide
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setPoses((p) => !p)}
+              className="mt-2 w-full rounded-2xl border border-border bg-card py-3 text-sm font-bold"
+            >
+              {poses ? "Hide pose list" : "Show pose list without camera"}
             </button>
 
             <AnimatePresence>
@@ -172,6 +184,8 @@ export function SosScreen({ open, onClose }: { open: boolean; onClose: () => voi
               I'm feeling steadier — exit
             </button>
           </div>
+
+          <PoseGuideCamera open={cameraGuide} onClose={() => setCameraGuide(false)} />
         </motion.div>
       )}
     </AnimatePresence>
