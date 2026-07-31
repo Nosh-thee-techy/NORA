@@ -17,6 +17,8 @@ import {
   Wifi,
   WifiOff,
   Loader2,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { useNora, type PainPoint } from "@/store/nora";
 import { PHASE_META, SYMPTOMS, type Phase } from "@/lib/cycle";
@@ -28,6 +30,9 @@ import {
   type ChatMessage,
 } from "@/lib/gemma";
 import { useOllamaStatus } from "@/hooks/useOllamaStatus";
+import { avatarById } from "@/lib/avatars";
+import { canSpeak, speakText, stopSpeaking } from "@/lib/speech";
+import { cn } from "@/lib/utils";
 
 const SUGGESTIONS = [
   "Analyze my current symptoms",
@@ -172,17 +177,22 @@ function StatusBadge({
 }
 
 export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
-  const { cycleDay, phase, energy, symptoms, painPoints } = useNora();
+  const { cycleDay, phase, energy, symptoms, painPoints, profile } = useNora();
+  const companion = avatarById(profile.avatarId);
   const { status: ollamaStatus, modelAvailable, recheck } = useOllamaStatus();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(true);
+  const [speaking, setSpeaking] = useState(false);
+  const [speakingMessageIndex, setSpeakingMessageIndex] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isPage = layout === "page";
+  const avatarSpeaking = streaming || speaking;
 
   // Hydrate chat from localStorage on mount
   useEffect(() => {
@@ -200,10 +210,16 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, streaming]);
+  }, [messages, streaming, speaking]);
 
-  // Cleanup abort on unmount
-  useEffect(() => () => abortRef.current?.abort(), []);
+  // Cleanup abort + speech on unmount
+  useEffect(
+    () => () => {
+      abortRef.current?.abort();
+      stopSpeaking();
+    },
+    [],
+  );
 
   // Auto-resize textarea
   const resizeTextarea = useCallback(() => {
@@ -216,11 +232,30 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
 
   const isDisabled = ollamaStatus === "disconnected" || !modelAvailable;
 
+  function playAssistantVoice(text: string, messageIndex: number) {
+    if (!voiceOn || !canSpeak() || !text.trim()) return;
+    setSpeakingMessageIndex(messageIndex);
+    speakText(text, {
+      onStart: () => setSpeaking(true),
+      onEnd: () => {
+        setSpeaking(false);
+        setSpeakingMessageIndex(null);
+      },
+      onError: () => {
+        setSpeaking(false);
+        setSpeakingMessageIndex(null);
+      },
+    });
+  }
+
   async function send(text: string) {
     const trimmed = text.trim();
     if (!trimmed || streaming) return;
     setInput("");
     setError(null);
+    stopSpeaking();
+    setSpeaking(false);
+    setSpeakingMessageIndex(null);
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
@@ -251,6 +286,9 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
         },
         controller.signal,
       );
+      // Speak the completed reply with the companion avatar "talking"
+      const assistantIndex = (messages.length ? messages.length : 0) + 1; // user + assistant
+      playAssistantVoice(acc, assistantIndex);
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") return;
       setError(
@@ -269,12 +307,27 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
     abortRef.current?.abort();
     abortRef.current = null;
     setStreaming(false);
+    stopSpeaking();
+    setSpeaking(false);
+    setSpeakingMessageIndex(null);
   }
 
   function clearChat() {
     setMessages([]);
     clearChatMessages();
     setError(null);
+    stopSpeaking();
+    setSpeaking(false);
+    setSpeakingMessageIndex(null);
+  }
+
+  function toggleVoice() {
+    if (voiceOn) {
+      stopSpeaking();
+      setSpeaking(false);
+      setSpeakingMessageIndex(null);
+    }
+    setVoiceOn((v) => !v);
   }
 
   function onSubmit(e: FormEvent) {
@@ -301,17 +354,29 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h2 className={isPage ? "text-lg font-extrabold tracking-tight" : "text-sm font-bold"}>
-              Talk to Luna
+              Talk with {companion.name}
             </h2>
             <Sparkles className="h-4 w-4 shrink-0 text-primary" />
           </div>
           {isPage && (
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Your private local companion — grounded in today’s cycle and symptoms.
+              Voice + image replies from your companion — grounded in today’s cycle.
             </p>
           )}
         </div>
         <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            aria-label={voiceOn ? "Mute companion voice" : "Unmute companion voice"}
+            aria-pressed={voiceOn}
+            onClick={toggleVoice}
+            className={cn(
+              "rounded-full p-1.5",
+              voiceOn ? "bg-accent text-accent-foreground" : "bg-secondary text-secondary-foreground",
+            )}
+          >
+            {voiceOn ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+          </button>
           <StatusBadge status={ollamaStatus} modelAvailable={modelAvailable} />
           {messages.length > 0 && (
             <button
@@ -323,6 +388,53 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
             </button>
           )}
         </div>
+      </div>
+
+      {/* Companion stage — avatar image "speaks" with voice replies */}
+      <div className="relative mt-3 flex shrink-0 flex-col items-center">
+        <motion.div
+          animate={
+            avatarSpeaking
+              ? { scale: [1, 1.04, 1], y: [0, -3, 0] }
+              : { scale: 1, y: 0 }
+          }
+          transition={
+            avatarSpeaking
+              ? { duration: 0.9, repeat: Infinity, ease: "easeInOut" }
+              : { duration: 0.25 }
+          }
+          className="relative"
+        >
+          <img
+            src={companion.url}
+            alt={companion.name}
+            className="h-28 w-28 object-contain drop-shadow-[0_14px_28px_color-mix(in_oklab,var(--phase)_35%,transparent)] sm:h-32 sm:w-32"
+          />
+          {avatarSpeaking && (
+            <span className="absolute inset-x-6 bottom-1 flex items-end justify-center gap-1">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <motion.span
+                  key={i}
+                  className="w-1 rounded-full bg-phase-deep"
+                  animate={{ height: ["6px", "16px", "6px"] }}
+                  transition={{
+                    duration: 0.55,
+                    repeat: Infinity,
+                    delay: i * 0.08,
+                    ease: "easeInOut",
+                  }}
+                />
+              ))}
+            </span>
+          )}
+        </motion.div>
+        <p className="mt-1 text-center text-xs font-bold text-foreground">
+          {streaming
+            ? `${companion.name} is composing…`
+            : speaking
+              ? `${companion.name} is speaking…`
+              : `${companion.name} · ${companion.mood}`}
+        </p>
       </div>
 
       {ollamaStatus === "disconnected" ? (
@@ -367,16 +479,16 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
           <div
             className={
               isPage
-                ? "flex flex-1 flex-col items-center justify-center gap-3 px-2 py-8 text-center"
+                ? "flex flex-1 flex-col items-center justify-center gap-3 px-2 py-6 text-center"
                 : "flex flex-col items-center gap-2 py-4 text-center"
             }
           >
             <p className={isPage ? "text-base font-semibold text-foreground" : "text-sm text-muted-foreground"}>
-              Say hi — or ask about how you're feeling.
+              Say hi — {companion.name} will answer with voice and presence.
             </p>
             {isPage && (
               <p className="max-w-sm text-sm text-muted-foreground">
-                Luna uses your cycle day, energy, and logged symptoms for grounded support.
+                Replies use your cycle day, energy, and logged symptoms for grounded support.
               </p>
             )}
             <div className="flex flex-wrap justify-center gap-2">
@@ -404,16 +516,45 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
               key={i}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mr-auto max-w-[85%] rounded-2xl bg-card px-4 py-2.5 text-sm"
+              className="mr-auto flex max-w-[92%] items-end gap-2"
             >
-              {renderMarkdown(m.content)}
+              <img
+                src={companion.url}
+                alt=""
+                aria-hidden
+                className={cn(
+                  "mb-0.5 h-10 w-10 shrink-0 object-contain",
+                  speakingMessageIndex === i && "drop-shadow-[0_0_12px_color-mix(in_oklab,var(--phase)_55%,transparent)]",
+                )}
+              />
+              <div className="min-w-0 rounded-2xl bg-card px-4 py-2.5 text-sm">
+                {renderMarkdown(m.content)}
+                {canSpeak() && (
+                  <button
+                    type="button"
+                    onClick={() => playAssistantVoice(m.content, i)}
+                    className="mt-2 inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[11px] font-bold text-accent-foreground"
+                  >
+                    <Volume2 className="h-3 w-3" />
+                    {speakingMessageIndex === i ? "Speaking…" : `Hear ${companion.name}`}
+                  </button>
+                )}
+              </div>
             </motion.div>
           ) : null,
         )}
 
         {streaming && messages[messages.length - 1]?.role !== "assistant" && (
-          <div className="mr-auto flex items-center gap-2 rounded-2xl bg-card px-4 py-2.5 text-sm text-muted-foreground">
-            Luna is thinking <TypingDots />
+          <div className="mr-auto flex items-end gap-2">
+            <img
+              src={companion.url}
+              alt=""
+              aria-hidden
+              className="h-10 w-10 object-contain"
+            />
+            <div className="rounded-2xl bg-card px-4 py-2.5 text-sm text-muted-foreground">
+              {companion.name} is thinking <TypingDots />
+            </div>
           </div>
         )}
 
@@ -441,7 +582,7 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
             resizeTextarea();
           }}
           onKeyDown={onKeyDown}
-          placeholder={isDisabled ? "Start Ollama to chat…" : "Message Luna…"}
+          placeholder={isDisabled ? "Start Ollama to chat…" : `Message ${companion.name}…`}
           disabled={isDisabled}
           rows={1}
           className="min-w-0 flex-1 resize-none rounded-2xl border border-border bg-card px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground focus:border-primary disabled:cursor-not-allowed disabled:opacity-50"
