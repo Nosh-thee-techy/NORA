@@ -1,13 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { MessageCircle, Stethoscope } from "lucide-react";
+import { MessageCircle, Stethoscope, HeartPulse, Sparkles } from "lucide-react";
 import { avatarById } from "@/lib/avatars";
+import { Luna } from "@/components/Luna";
 import { TopNav } from "@/components/TopNav";
 import { PainMapper } from "@/components/PainMapper";
 import { SosScreen } from "@/components/SosScreen";
+import { PoseGuideCamera } from "@/components/PoseGuideCamera";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { useNora, cycleDayFromProfile } from "@/store/nora";
 import { PHASE_META, SYMPTOMS, buildCycleWindow } from "@/lib/cycle";
+import { getForecast } from "@/lib/forecast";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -33,6 +38,8 @@ function Dashboard() {
   const {
     cycleDay,
     setCycleDay,
+    energy,
+    setEnergy,
     symptoms,
     toggleSymptom,
     phase,
@@ -40,23 +47,35 @@ function Dashboard() {
     onboarded,
     hydrated,
     profile,
+    recoveryMode,
+    setRecoveryMode,
+    resilienceUnlocked,
+    logTodaySignals,
+    recordPatternMonth,
+    endoRiskReason,
+    patternMonthsLogged,
+    monthLogs,
   } = useNora();
   const companion = avatarById(profile.avatarId);
   const navigate = useNavigate();
   const [mapper, setMapper] = useState(false);
   const [sos, setSos] = useState(false);
+  const [poseCam, setPoseCam] = useState(false);
+  const [wobbleNote, setWobbleNote] = useState(false);
 
   const cycleWindow = useMemo(() => buildCycleWindow(profile), [profile]);
   const todayCycleDay = useMemo(() => cycleDayFromProfile(profile), [profile]);
+  const forecast = useMemo(() => getForecast(profile), [profile]);
   const todayCell = useMemo(
-    () => cycleWindow.days.find((d) => d.isToday) ?? cycleWindow.days.find((d) => d.cycleDay === todayCycleDay),
+    () =>
+      cycleWindow.days.find((d) => d.isToday) ??
+      cycleWindow.days.find((d) => d.cycleDay === todayCycleDay),
     [cycleWindow.days, todayCycleDay],
   );
 
   const threeDayStrip = useMemo(() => {
     const days = cycleWindow.days;
     if (days.length === 0) return [];
-    // Always center on real today so the strip answers "what is today in my cycle?"
     const todayIdx = Math.max(
       0,
       days.findIndex((d) => d.isToday || d.cycleDay === todayCycleDay),
@@ -75,24 +94,53 @@ function Dashboard() {
     if (hydrated && !onboarded) navigate({ to: "/onboarding", replace: true });
   }, [hydrated, onboarded, navigate]);
 
-  // On load, snap cycle day to what today actually is in this cycle
   useEffect(() => {
     if (!hydrated || !onboarded) return;
     setCycleDay(todayCycleDay);
-    // intentionally only when profile/onboarding identity changes
+    // setCycleDay identity changes with store state — depend on profile inputs only
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, onboarded, profile.lastPeriodStart, profile.cycleLength, todayCycleDay, setCycleDay]);
+  }, [hydrated, onboarded, profile.lastPeriodStart, profile.cycleLength, todayCycleDay]);
+
+  // Keep monthly pattern logs fresh when symptoms/pain change (not every energy tick)
+  useEffect(() => {
+    if (!hydrated || !onboarded) return;
+    logTodaySignals();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, onboarded, symptoms, painPoints.length]);
 
   return (
     <div
       data-phase={phase}
       data-avatar={profile.avatarId}
-      className="min-h-screen bg-background pb-16 transition-colors duration-500"
+      data-forecast={forecast.warmerUi ? "warm" : "calm"}
+      className={`min-h-screen pb-16 transition-colors duration-500 ${
+        forecast.warmerUi
+          ? "bg-[color-mix(in_oklab,var(--menstrual)_14%,var(--background))]"
+          : "bg-background"
+      }`}
     >
       <TopNav onSos={() => setSos(true)} />
 
       <main className="mx-auto max-w-xl px-4">
-        {/* Hero — companion-led feeling check-in */}
+        {forecast.prompt && (
+          <section className="mt-4 rounded-3xl border border-menstrual/30 bg-menstrual/10 px-4 py-3">
+            <p className="text-xs font-bold uppercase tracking-wide text-phase-deep">
+              Forecast care
+            </p>
+            <p className="mt-1 text-sm font-semibold leading-relaxed text-foreground">
+              {forecast.prompt}
+            </p>
+            <button
+              type="button"
+              onClick={() => setPoseCam(true)}
+              className="mt-2 text-xs font-bold text-phase-deep underline"
+            >
+              Open Child’s Pose camera guide
+            </button>
+          </section>
+        )}
+
+        {/* Hero — dynamic Luna + companion identity */}
         <section className="relative mt-4 overflow-hidden rounded-4xl glass-panel px-5 pb-6 pt-5">
           <div className="pointer-events-none absolute inset-0 ambient-glow" aria-hidden />
 
@@ -106,37 +154,140 @@ function Dashboard() {
                 <span className="text-phase-deep">{companion.name}</span>?
               </h1>
             </div>
-            <span className="shrink-0 rounded-full bg-accent px-3 py-1.5 text-[11px] font-bold text-accent-foreground">
-              Day {cycleDay}
-              <span className="mx-1 opacity-50">·</span>
-              {PHASE_META[phase].label}
-            </span>
+            <div className="flex shrink-0 flex-col items-end gap-2">
+              <span className="rounded-full bg-accent px-3 py-1.5 text-[11px] font-bold text-accent-foreground">
+                Day {cycleDay}
+                <span className="mx-1 opacity-50">·</span>
+                {PHASE_META[phase].label}
+              </span>
+              <img
+                src={companion.url}
+                alt={companion.name}
+                className="h-10 w-10 object-contain"
+              />
+            </div>
           </div>
 
-          <motion.div
-            key={companion.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
-            className="relative mt-5 flex flex-col items-center"
-          >
-            <img
-              src={companion.url}
-              alt=""
-              aria-hidden
-              className="h-44 w-44 object-contain drop-shadow-[0_18px_40px_color-mix(in_oklab,var(--phase)_35%,transparent)] sm:h-52 sm:w-52"
+          <div className="relative mt-4 flex flex-col items-center">
+            <Luna
+              phase={recoveryMode ? "follicular" : phase}
+              energy={energy}
+              symptoms={symptoms}
+              size={240}
+              resilience={resilienceUnlocked}
+              recovery={recoveryMode}
+              energyInteractive
+              onEnergyChange={setEnergy}
+              onPoke={() => {
+                setWobbleNote(true);
+                setTimeout(() => setWobbleNote(false), 1600);
+              }}
             />
+            <p className="mt-1 text-center text-sm font-semibold text-muted-foreground">
+              {wobbleNote
+                ? "Nora felt that — I'm right here."
+                : recoveryMode
+                  ? "Post-op rest mode · soft cloud support"
+                  : PHASE_META[phase].blurb}
+            </p>
+            {resilienceUnlocked && (
+              <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-200/40 px-3 py-1 text-[11px] font-bold text-amber-900">
+                <Sparkles className="h-3 w-3" />
+                Resilience glow earned from your 3-month pattern
+              </p>
+            )}
+          </div>
 
-            <p className="mt-3 text-center text-sm font-bold text-foreground">
-              {companion.mood}
+          <div className="relative mt-4">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-bold">Energy with Nora</h2>
+              <span className="text-xs font-bold text-foreground">{energy}%</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Slide or drag Nora — Endo Belly expands her; calm makes her softer.
             </p>
-            <p className="mt-1 max-w-[22rem] text-center text-sm leading-relaxed text-muted-foreground">
-              {companion.description}
-            </p>
-          </motion.div>
+            <Slider
+              value={[energy]}
+              min={0}
+              max={100}
+              step={1}
+              onValueChange={(v) => setEnergy(v[0] ?? 0)}
+              className="mt-3"
+            />
+            <div className="mt-1 flex justify-between text-[11px] font-semibold text-muted-foreground">
+              <span>Low / calm</span>
+              <span>Radiant</span>
+            </div>
+          </div>
+
+          <label className="relative mt-4 flex items-center justify-between gap-3 rounded-2xl bg-card/70 px-3 py-2.5">
+            <span className="text-xs font-bold text-foreground">
+              Post-op recovery mode
+              <span className="mt-0.5 block font-semibold text-muted-foreground">
+                Soft cloud rest + healing light particles
+              </span>
+            </span>
+            <Switch checked={recoveryMode} onCheckedChange={setRecoveryMode} />
+          </label>
+
+          {recoveryMode && (
+            <div className="relative mt-3 space-y-2 rounded-2xl bg-sky-100/50 px-3 py-3">
+              <p className="text-xs font-bold text-sky-950">Recovery journey</p>
+              {[
+                "Day 1–3 · Rest cloud — short walks only if cleared",
+                "Week 1 · Gentle breath + supported Child’s Pose (no strain)",
+                "Week 2+ · Reintroduce energy slides slowly with Nora",
+              ].map((line) => (
+                <p
+                  key={line}
+                  className="rounded-xl bg-white/60 px-3 py-2 text-[11px] font-semibold text-sky-950/90"
+                >
+                  {line}
+                </p>
+              ))}
+            </div>
+          )}
+
+          <div className="relative mt-4 rounded-2xl bg-card/70 px-3 py-3">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-xs font-bold text-foreground">Endo risk → resilience</p>
+                <p className="mt-0.5 text-[11px] font-semibold text-muted-foreground">
+                  {endoRiskReason}
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full bg-accent px-2.5 py-1 text-[11px] font-bold text-accent-foreground">
+                {Math.min(patternMonthsLogged, 3)}/3
+              </span>
+            </div>
+            <div className="mt-2 flex gap-1">
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  className={`h-1.5 flex-1 rounded-full ${
+                    i < patternMonthsLogged ? "bg-amber-400" : "bg-muted"
+                  }`}
+                />
+              ))}
+            </div>
+            {monthLogs.length > 0 && (
+              <p className="mt-2 text-[10px] font-semibold text-muted-foreground">
+                Logged: {monthLogs.map((m) => m.month).join(" · ")}
+              </p>
+            )}
+            {!resilienceUnlocked && (
+              <button
+                type="button"
+                onClick={recordPatternMonth}
+                className="mt-2 text-[11px] font-bold text-phase-deep underline"
+              >
+                Credit this month’s high-pain pattern
+              </button>
+            )}
+          </div>
         </section>
 
-        {/* Cycle calendar — yesterday / today / tomorrow, with cycle meaning */}
+        {/* Cycle calendar */}
         <section className="mt-4 rounded-4xl glass-panel p-4">
           <div className="min-w-0">
             <h2 className="text-sm font-bold">Cycle calendar</h2>
@@ -163,7 +314,6 @@ function Dashboard() {
                   key={`${label}-${cell.cycleDay}`}
                   data-phase={cell.phase}
                   onClick={() => setCycleDay(cell.cycleDay)}
-                  title={`${label} · ${cell.date.toLocaleDateString()} · cycle day ${cell.cycleDay}`}
                   className={`flex flex-col items-center justify-center rounded-3xl px-2 py-3 transition-transform ${
                     active
                       ? "phase-gradient scale-[1.03] text-primary-foreground shadow-[var(--shadow-soft)]"
@@ -212,6 +362,9 @@ function Dashboard() {
         {/* Symptom chips */}
         <section className="mt-4 rounded-4xl glass-panel p-5">
           <h2 className="text-sm font-bold">Quick symptoms</h2>
+          <p className="text-xs text-muted-foreground">
+            Tap to update Nora live — Endo Belly expands her shape.
+          </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {SYMPTOMS.map((s) => {
               const on = symptoms.includes(s.id);
@@ -246,18 +399,26 @@ function Dashboard() {
           </button>
         </section>
 
-        {/* WhatsApp sync */}
         <section className="mt-4 flex items-center gap-3 rounded-3xl glass-panel px-4 py-3">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-accent text-accent-foreground">
             <MessageCircle className="h-4 w-4" />
           </span>
           <p className="text-xs font-semibold">
-            Connected to WhatsApp
+            WhatsApp care line ready
             <span className="block font-normal text-muted-foreground">
-              Reply to daily check-ins on WhatsApp anytime.
+              SOS can open WhatsApp/SMS to your emergency contact.
             </span>
           </p>
         </section>
+
+        <button
+          type="button"
+          onClick={() => setSos(true)}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-destructive py-3.5 text-sm font-bold text-destructive-foreground"
+        >
+          <HeartPulse className="h-4 w-4" />
+          Open Crisis Flare Mode
+        </button>
 
         <p className="mt-5 text-center text-[11px] text-muted-foreground">
           Works offline — your logs stay on this device until you choose to share them.
@@ -266,6 +427,7 @@ function Dashboard() {
 
       <PainMapper open={mapper} onClose={() => setMapper(false)} />
       <SosScreen open={sos} onClose={() => setSos(false)} />
+      <PoseGuideCamera open={poseCam} onClose={() => setPoseCam(false)} />
     </div>
   );
 }

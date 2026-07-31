@@ -1,3 +1,12 @@
+import sadnessUrl from "@/assets/avatars/sadness.png";
+import anxietyUrl from "@/assets/avatars/anxiety.png";
+import angerUrl from "@/assets/avatars/anger.png";
+import fearUrl from "@/assets/avatars/fear.png";
+import disgustUrl from "@/assets/avatars/disgust.png";
+import envyUrl from "@/assets/avatars/envy.png";
+import embarrassmentUrl from "@/assets/avatars/embarrassment.png";
+import ennuiUrl from "@/assets/avatars/ennui.png";
+
 export type AvatarOption = {
   id: string;
   name: string;
@@ -14,7 +23,7 @@ export const AVATARS: AvatarOption[] = [
     mood: "Tender & honest",
     description:
       "Soft and steady. Sadness helps you name hard feelings without rushing past them — a gentle companion for tender cycle days.",
-    url: "/avatars/sadness.png",
+    url: sadnessUrl,
   },
   {
     id: "anxiety",
@@ -22,7 +31,7 @@ export const AVATARS: AvatarOption[] = [
     mood: "Wired & alert",
     description:
       "Buzzing with care. Anxiety notices every signal early so you can plan rest, support, and check-ins before overwhelm hits.",
-    url: "/avatars/anxiety.png",
+    url: anxietyUrl,
   },
   {
     id: "anger",
@@ -30,7 +39,7 @@ export const AVATARS: AvatarOption[] = [
     mood: "Fired up",
     description:
       "Protective fire. Anger validates pain that gets minimized and helps you advocate for your body when something isn’t right.",
-    url: "/avatars/anger.png",
+    url: angerUrl,
   },
   {
     id: "fear",
@@ -38,7 +47,7 @@ export const AVATARS: AvatarOption[] = [
     mood: "On edge",
     description:
       "Cautious and prepared. Fear keeps you safe by spotting flare patterns and reminding you it’s okay to slow down.",
-    url: "/avatars/fear.png",
+    url: fearUrl,
   },
   {
     id: "disgust",
@@ -46,7 +55,7 @@ export const AVATARS: AvatarOption[] = [
     mood: "Over it",
     description:
       "Clear boundaries. Disgust helps you reject what drains you — guilt, push-through culture, and anything that ignores your limits.",
-    url: "/avatars/disgust.png",
+    url: disgustUrl,
   },
   {
     id: "envy",
@@ -54,7 +63,7 @@ export const AVATARS: AvatarOption[] = [
     mood: "Wistful",
     description:
       "Honest wanting. Envy names the ease or comfort you crave and turns comparison into a clue about what your body needs.",
-    url: "/avatars/envy.png",
+    url: envyUrl,
   },
   {
     id: "embarrassment",
@@ -62,7 +71,7 @@ export const AVATARS: AvatarOption[] = [
     mood: "Cocooning",
     description:
       "Quiet and private. Embarrassment makes space for messy period truths without shame — your story stays yours.",
-    url: "/avatars/embarrassment.png",
+    url: embarrassmentUrl,
   },
   {
     id: "ennui",
@@ -70,14 +79,19 @@ export const AVATARS: AvatarOption[] = [
     mood: "Low battery",
     description:
       "Low-power mode. Ennui honors flat, foggy days and reminds you that rest is part of the cycle, not a failure.",
-    url: "/avatars/ennui.png",
+    url: ennuiUrl,
   },
 ];
 
 export const DEFAULT_AVATAR_ID = "sadness";
 
 export function avatarById(id: string | null | undefined): AvatarOption {
-  return AVATARS.find((a) => a.id === id) ?? AVATARS[0]!;
+  const found = AVATARS.find((a) => a.id === id) ?? AVATARS[0]!;
+  // Prefer bundled asset URL; keep public path as last-resort string if import ever empty
+  if (!found.url) {
+    return { ...found, url: `/avatars/${found.id}.png` };
+  }
+  return found;
 }
 
 export function avatarIndex(id: string | null | undefined): number {
