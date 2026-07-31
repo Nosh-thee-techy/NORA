@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { DEFAULT_AVATAR_ID } from "@/lib/avatars";
 import { phaseForDay, type Phase, type SymptomId, CYCLE_LENGTH } from "@/lib/cycle";
 
 export type PainPoint = {
@@ -26,6 +27,7 @@ export type OnboardingProfile = {
   whatsappCountry: string;
   dailyCheckin: boolean;
   emergencyContact: string;
+  avatarId: string;
 };
 
 type NoraState = {
@@ -48,6 +50,7 @@ export const DEFAULT_PROFILE: OnboardingProfile = {
   whatsappCountry: "+1",
   dailyCheckin: true,
   emergencyContact: "",
+  avatarId: DEFAULT_AVATAR_ID,
 };
 
 const DEFAULT_STATE: NoraState = {
