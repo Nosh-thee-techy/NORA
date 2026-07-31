@@ -81,39 +81,48 @@ function Dashboard() {
       <TopNav onSos={() => setSos(true)} />
 
       <main className="mx-auto max-w-xl px-4">
-        {/* Hero — emotion companion is the feeling, not the Luna orb */}
-        <section className="relative mt-4 flex flex-col items-center overflow-hidden rounded-4xl glass-panel px-4 pt-6 pb-7">
+        {/* Hero — companion-led feeling check-in */}
+        <section className="relative mt-4 overflow-hidden rounded-4xl glass-panel px-5 pb-6 pt-5">
           <div className="pointer-events-none absolute inset-0 ambient-glow" aria-hidden />
+
+          <div className="relative flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-phase-deep">
+                Today’s check-in
+              </p>
+              <h1 className="mt-1 text-balance text-2xl font-extrabold leading-tight tracking-tight text-foreground sm:text-[1.75rem]">
+                How are you feeling with{" "}
+                <span className="text-phase-deep">{companion.name}</span>?
+              </h1>
+            </div>
+            <span className="shrink-0 rounded-full bg-accent px-3 py-1.5 text-[11px] font-bold text-accent-foreground">
+              Day {cycleDay}
+              <span className="mx-1 opacity-50">·</span>
+              {PHASE_META[phase].label}
+            </span>
+          </div>
+
           <motion.div
             key={companion.id}
-            initial={{ opacity: 0, scale: 0.94, y: 8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, ease: "easeOut" }}
-            className="relative flex w-full max-w-[240px] flex-col items-center"
+            className="relative mt-5 flex flex-col items-center"
           >
-            <div className="grid aspect-square w-full place-items-center overflow-hidden">
-              <img
-                src={companion.url}
-                alt={companion.name}
-                className="h-full w-full object-contain drop-shadow-[0_18px_40px_color-mix(in_oklab,var(--phase)_35%,transparent)]"
-              />
-            </div>
-            <h2 className="relative mt-4 text-center text-xl font-extrabold tracking-tight text-foreground">
-              {companion.name}
-            </h2>
-            <p className="relative mt-1 text-center text-xs font-bold uppercase tracking-wide text-phase-deep">
+            <img
+              src={companion.url}
+              alt=""
+              aria-hidden
+              className="h-44 w-44 object-contain drop-shadow-[0_18px_40px_color-mix(in_oklab,var(--phase)_35%,transparent)] sm:h-52 sm:w-52"
+            />
+
+            <p className="mt-3 text-center text-sm font-bold text-foreground">
               {companion.mood}
             </p>
-            <p className="relative mt-2 max-w-sm text-center text-sm leading-relaxed text-muted-foreground">
+            <p className="mt-1 max-w-[22rem] text-center text-sm leading-relaxed text-muted-foreground">
               {companion.description}
             </p>
           </motion.div>
-          <p className="relative mt-4 text-center text-xs font-semibold text-muted-foreground">
-            {PHASE_META[phase].label} · Day {cycleDay}
-          </p>
-          <h1 className="relative mt-2 text-center text-2xl font-extrabold tracking-tight">
-            How are you feeling today?
-          </h1>
         </section>
 
         {/* Cycle calendar — only previous, today, next */}
