@@ -8,17 +8,17 @@ import { useNora } from "@/store/nora";
 export const Route = createFileRoute("/chat")({
   head: () => ({
     meta: [
-      { title: "Talk to Luna — NORA Companion Chat" },
+      { title: "Talk with your companion — NORA" },
       {
         name: "description",
         content:
-          "A dedicated space to talk with Luna, your local AI cycle companion grounded in today's symptoms and energy.",
+          "Talk with your emotion companion through voice and image replies, grounded in today's cycle and symptoms.",
       },
-      { property: "og:title", content: "Talk to Luna — NORA Companion Chat" },
+      { property: "og:title", content: "Talk with your companion — NORA" },
       {
         property: "og:description",
         content:
-          "Chat privately with Luna about how you're feeling — powered by a local model on your machine.",
+          "Private companion chat with spoken replies and avatar presence — powered by a local model.",
       },
     ],
   }),
