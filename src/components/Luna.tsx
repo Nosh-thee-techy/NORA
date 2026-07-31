@@ -61,7 +61,7 @@ export function Luna({
   return (
     <motion.button
       type="button"
-      aria-label="Luna, your cycle companion. Tap to interact."
+      aria-label="Nora, your cycle companion. Tap to interact."
       onClick={() => {
         setWobble((w) => w + 1);
         onPoke?.();

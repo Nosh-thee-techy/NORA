@@ -84,18 +84,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         name: "viewport",
         content: "width=device-width, initial-scale=1, viewport-fit=cover",
       },
-      { title: "NORA — Bloom Cycle Companion" },
+      { title: "Nora — Cycle Companion" },
       {
         name: "description",
         content:
-          "NORA is an empathetic, offline-first menstrual health tracker and silent endometriosis screening companion.",
+          "Nora is an empathetic, offline-first menstrual health tracker and silent endometriosis screening companion.",
       },
-      { name: "author", content: "NORA" },
-      { property: "og:title", content: "NORA — Bloom Cycle Companion" },
+      { name: "author", content: "Nora" },
+      { property: "og:title", content: "Nora — Cycle Companion" },
       {
         property: "og:description",
         content:
-          "Track your cycle with Luna, a living companion that reflects how you actually feel.",
+          "Track your cycle with Nora, a living companion that reflects how you actually feel.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

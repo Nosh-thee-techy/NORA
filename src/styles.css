@@ -5,8 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Bloom design system — NORA menstrual health companion.
- * Phase-aware semantic tokens drive Luna and the whole ambient UI.
+ * Nora design system — menstrual health companion.
+ * Phase-aware semantic tokens drive the ambient UI.
  */
 
 @theme inline {

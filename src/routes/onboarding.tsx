@@ -33,7 +33,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
     meta: [
-      { title: "Welcome to Bloom — Set Up Luna, Your Cycle Companion" },
+      { title: "Welcome to Nora — Set Up Your Cycle Companion" },
       {
         name: "description",
         content:
@@ -41,12 +41,12 @@ export const Route = createFileRoute("/onboarding")({
       },
       {
         property: "og:title",
-        content: "Welcome to Bloom — Set Up Luna, Your Cycle Companion",
+        content: "Welcome to Nora — Set Up Your Cycle Companion",
       },
       {
         property: "og:description",
         content:
-          "Private, offline-first onboarding for NORA. Align Luna with your rhythm in under a minute.",
+          "Private, offline-first onboarding for Nora. Align with your rhythm in under a minute.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -276,7 +276,7 @@ function StepWelcome({
   return (
     <div className="flex flex-1 flex-col items-center">
       <h1 className="mt-6 text-center text-3xl font-extrabold tracking-tight text-foreground">
-        Meet Bloom—Your Cycle &amp; Body Companion.
+        Meet Nora—Your Cycle &amp; Body Companion.
       </h1>
       <p className="mt-3 text-center text-sm leading-relaxed text-muted-foreground">
         A safe, private space that listens to your body, validates your pain, and grows
@@ -498,7 +498,7 @@ function StepCycle({
     <div className="flex flex-1 flex-col">
       <StepHeading
         title="Let's align with your rhythm."
-        subtitle="Bloom uses this to help Luna evolve alongside your body's natural phases."
+        subtitle="Nora uses this to evolve alongside your body's natural phases."
       />
 
       <div className="mt-6 space-y-5">
@@ -584,7 +584,7 @@ function StepCycle({
         )}
 
         <p className="text-center text-xs font-semibold text-muted-foreground">
-          Don't worry if it's irregular—Luna adapts to you. We never assume your period
+          Don't worry if it's irregular—Nora adapts to you. We never assume your period
           starts on the 1st of the month.
         </p>
       </div>
@@ -611,7 +611,7 @@ function StepSymptoms({
     <div className="flex flex-1 flex-col">
       <StepHeading
         title="What do your period days usually feel like?"
-        subtitle="Select all that apply so Luna knows when to support you extra."
+        subtitle="Select all that apply so Nora knows when to support you extra."
       />
 
       <div className="mt-4 flex flex-col items-center">
@@ -752,7 +752,7 @@ function StepConnect({
         </section>
       </div>
 
-      <BottomAction label="Meet Luna & Complete Setup" icon onClick={onFinish} />
+      <BottomAction label="Meet Nora & Complete Setup" icon onClick={onFinish} />
     </div>
   );
 }

@@ -12,17 +12,17 @@ import { PHASE_META, SYMPTOMS, buildCycleWindow } from "@/lib/cycle";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NORA — Bloom Cycle & Endometriosis Companion" },
+      { title: "Nora — Cycle & Endometriosis Companion" },
       {
         name: "description",
         content:
-          "Track your cycle with Luna, an empathetic companion that reflects your symptoms, and screen quietly for endometriosis signs — offline-first.",
+          "Track your cycle with Nora, an empathetic companion that reflects your symptoms, and screen quietly for endometriosis signs — offline-first.",
       },
-      { property: "og:title", content: "NORA — Bloom Cycle & Endometriosis Companion" },
+      { property: "og:title", content: "Nora — Cycle & Endometriosis Companion" },
       {
         property: "og:description",
         content:
-          "An empathetic, offline-first menstrual health tracker with Luna, your living cycle companion.",
+          "An empathetic, offline-first menstrual health tracker with Nora, your living cycle companion.",
       },
     ],
   }),

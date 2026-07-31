@@ -15,7 +15,7 @@ export function TopNav({ onSos }: { onSos: () => void }) {
           <span className="grid h-9 w-9 place-items-center rounded-2xl phase-gradient text-primary-foreground">
             <Sprout className="h-5 w-5" />
           </span>
-          <span className="text-lg font-extrabold tracking-tight">Bloom</span>
+          <span className="text-lg font-extrabold tracking-tight">Nora</span>
         </Link>
 
         <div className="ml-auto flex items-center gap-2">
