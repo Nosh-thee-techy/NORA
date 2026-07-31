@@ -1,0 +1,219 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Bloom design system — NORA menstrual health companion.
+ * Phase-aware semantic tokens drive Luna and the whole ambient UI.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Nunito", ui-sans-serif, system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-phase: var(--phase);
+  --color-phase-soft: var(--phase-soft);
+  --color-phase-deep: var(--phase-deep);
+  --color-follicular: var(--follicular);
+  --color-ovulation: var(--ovulation);
+  --color-luteal: var(--luteal);
+  --color-menstrual: var(--menstrual);
+  --color-sos: var(--sos);
+  --color-sos-glow: var(--sos-glow);
+  --color-glass: var(--glass);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 1.5rem;
+
+  /* Phase palette */
+  --follicular: oklch(0.82 0.09 232);
+  --ovulation: oklch(0.87 0.16 92);
+  --luteal: oklch(0.62 0.14 300);
+  --menstrual: oklch(0.7 0.16 25);
+  --sos: oklch(0.16 0.005 280);
+  --sos-glow: oklch(0.62 0.24 22);
+
+  /* Active phase (overridden by data-phase) */
+  --phase: var(--follicular);
+  --phase-soft: color-mix(in oklab, var(--phase) 22%, white);
+  --phase-deep: color-mix(in oklab, var(--phase) 70%, oklch(0.25 0.05 300));
+
+  --background: oklch(0.985 0.008 90);
+  --foreground: oklch(0.28 0.035 300);
+  --card: oklch(1 0 0 / 65%);
+  --card-foreground: oklch(0.28 0.035 300);
+  --popover: oklch(0.99 0.006 90);
+  --popover-foreground: oklch(0.28 0.035 300);
+  --primary: var(--phase-deep);
+  --primary-foreground: oklch(0.99 0.005 90);
+  --secondary: color-mix(in oklab, var(--phase) 16%, white);
+  --secondary-foreground: oklch(0.32 0.05 300);
+  --muted: oklch(0.96 0.01 300);
+  --muted-foreground: oklch(0.53 0.03 300);
+  --accent: color-mix(in oklab, var(--phase) 26%, white);
+  --accent-foreground: oklch(0.3 0.05 300);
+  --destructive: oklch(0.6 0.23 25);
+  --destructive-foreground: oklch(0.99 0.005 90);
+  --border: oklch(0.9 0.02 300 / 70%);
+  --input: oklch(0.9 0.02 300 / 70%);
+  --ring: var(--phase);
+  --glass: oklch(1 0 0 / 55%);
+
+  --chart-1: var(--follicular);
+  --chart-2: var(--ovulation);
+  --chart-3: var(--luteal);
+  --chart-4: var(--menstrual);
+  --chart-5: oklch(0.65 0.1 200);
+
+  --sidebar: oklch(0.99 0.006 90);
+  --sidebar-foreground: oklch(0.28 0.035 300);
+  --sidebar-primary: var(--phase-deep);
+  --sidebar-primary-foreground: oklch(0.99 0.005 90);
+  --sidebar-accent: color-mix(in oklab, var(--phase) 18%, white);
+  --sidebar-accent-foreground: oklch(0.3 0.05 300);
+  --sidebar-border: oklch(0.9 0.02 300 / 70%);
+  --sidebar-ring: var(--phase);
+
+  --gradient-ambient: radial-gradient(
+    circle at 50% 18%,
+    color-mix(in oklab, var(--phase) 45%, transparent) 0%,
+    color-mix(in oklab, var(--phase) 12%, transparent) 42%,
+    transparent 72%
+  );
+  --gradient-phase: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--phase) 85%, white),
+    var(--phase-deep)
+  );
+  --shadow-soft: 0 18px 45px -20px color-mix(in oklab, var(--phase) 55%, transparent);
+  --shadow-glow: 0 0 70px -8px color-mix(in oklab, var(--phase) 60%, transparent);
+}
+
+[data-phase="follicular"] {
+  --phase: var(--follicular);
+}
+[data-phase="ovulation"] {
+  --phase: var(--ovulation);
+}
+[data-phase="luteal"] {
+  --phase: var(--luteal);
+}
+[data-phase="menstrual"] {
+  --phase: var(--menstrual);
+}
+
+.dark,
+[data-mode="sos"] {
+  --background: oklch(0.16 0.005 280);
+  --foreground: oklch(0.96 0.01 60);
+  --card: oklch(0.24 0.01 285 / 70%);
+  --card-foreground: oklch(0.96 0.01 60);
+  --popover: oklch(0.2 0.008 285);
+  --popover-foreground: oklch(0.96 0.01 60);
+  --muted: oklch(0.28 0.01 285);
+  --muted-foreground: oklch(0.72 0.02 60);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --glass: oklch(1 0 0 / 8%);
+  --secondary: oklch(0.28 0.02 285);
+  --secondary-foreground: oklch(0.96 0.01 60);
+  --accent: oklch(0.3 0.03 285);
+  --accent-foreground: oklch(0.96 0.01 60);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@utility glass-panel {
+  background: var(--glass);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  border: 1px solid color-mix(in oklab, var(--phase) 22%, transparent);
+  box-shadow: var(--shadow-soft);
+}
+
+@utility ambient-glow {
+  background-image: var(--gradient-ambient);
+}
+
+@utility phase-gradient {
+  background-image: var(--gradient-phase);
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+@keyframes float-sparkle {
+  0% {
+    transform: translateY(0) scale(0.8);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-38px) scale(1.1);
+    opacity: 0;
+  }
+}
