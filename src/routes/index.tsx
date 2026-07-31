@@ -43,7 +43,9 @@ function Dashboard() {
     painPoints,
     onboarded,
     hydrated,
+    profile,
   } = useNora();
+  const companion = avatarById(profile.avatarId);
   const navigate = useNavigate();
   const [mapper, setMapper] = useState(false);
   const [sos, setSos] = useState(false);
