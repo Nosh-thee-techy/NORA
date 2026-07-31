@@ -144,7 +144,7 @@ export function PainMapper({ open, onClose }: { open: boolean; onClose: () => vo
                   min={1}
                   max={10}
                   step={1}
-                  onValueChange={([v]) => updatePainPoint(active.id, { intensity: v })}
+                  onValueChange={(v) => updatePainPoint(active.id, { intensity: v[0] ?? 1 })}
                   className="mt-2"
                 />
 
@@ -156,7 +156,7 @@ export function PainMapper({ open, onClose }: { open: boolean; onClose: () => vo
                   min={1}
                   max={10}
                   step={1}
-                  onValueChange={([v]) => updatePainPoint(active.id, { depth: v })}
+                  onValueChange={(v) => updatePainPoint(active.id, { depth: v[0] ?? 1 })}
                   className="mt-2"
                 />
               </div>
