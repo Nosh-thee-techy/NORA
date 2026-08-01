@@ -49,7 +49,7 @@ export default {
     try {
       const url = new URL(request.url);
       const OLLAMA_BASE = process.env["OLLAMA_URL"] ?? "http://127.0.0.1:11434";
-      const GEMMA_MODEL = process.env["GEMMA_MODEL"] ?? "gemma:2b";
+      const GEMMA_MODEL = process.env["GEMMA_MODEL"] ?? "batiai/gemma4-e2b:q4";
 
       if (url.pathname === "/api/ollama-status" && request.method === "GET") {
         try {
@@ -70,14 +70,10 @@ export default {
           const models = (data.models ?? [])
             .map((m) => m.name ?? m.model)
             .filter(Boolean) as string[];
+          const target = GEMMA_MODEL.toLowerCase();
           const modelAvailable = models.some((name) => {
             const n = name.toLowerCase();
-            return (
-              n === "gemma:2b" ||
-              n === "gemma2:2b" ||
-              n.startsWith("gemma:2b-") ||
-              n.startsWith("gemma2:2b-")
-            );
+            return n === target || n.startsWith(target.split(":")[0] ?? target);
           });
           return Response.json({
             status: "connected",
@@ -96,7 +92,7 @@ export default {
       }
 
       if (url.pathname === "/api/chat" && request.method === "POST") {
-        // Pass through the request payload, forcing gemma:2b when model is missing
+        // Pass through the request payload, forcing the configured model when model is missing
         const raw = await request.text();
         let body = raw;
         try {

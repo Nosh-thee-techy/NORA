@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { GEMMA_MODEL, getOllamaBase, isGemma2bModel } from "@/lib/ollama";
+import { GEMMA_MODEL, getOllamaBase, isTargetModel } from "@/lib/ollama";
 
 export type OllamaStatusResult = {
   status: "connected" | "disconnected";
@@ -34,7 +34,7 @@ export const getOllamaStatus = createServerFn({ method: "GET" }).handler(
         .map((m) => m.name ?? m.model)
         .filter(Boolean) as string[];
 
-      const modelAvailable = models.some((name) => isGemma2bModel(name));
+      const modelAvailable = models.some((name) => isTargetModel(name));
 
       return {
         status: "connected",
