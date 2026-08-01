@@ -1,5 +1,6 @@
 export { GEMMA_ENDPOINT, GEMMA_MODEL } from "@/lib/ollama";
 import { GEMMA_ENDPOINT, GEMMA_MODEL } from "@/lib/ollama";
+import { hasWebGPUSupport, streamWebGPUChat, analyzeHealthDataWebGPU } from "@/lib/webgpu-llm";
 
 export type ChatRole = "user" | "assistant" | "system";
 
@@ -46,6 +47,15 @@ export async function streamGemmaChat(
   onChunk: (text: string) => void,
   signal?: AbortSignal,
 ): Promise<void> {
+  if (hasWebGPUSupport()) {
+    try {
+      return await streamWebGPUChat(messages, onChunk, signal);
+    } catch (err) {
+      console.warn("WebGPU inference failed, falling back to Ollama API:", err);
+      // Fall through to Ollama
+    }
+  }
+
   const res = await fetch(GEMMA_ENDPOINT, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -127,6 +137,15 @@ export async function analyzeHealthData(
   context: string,
   history: ChatMessage[],
 ): Promise<ReportData> {
+  if (hasWebGPUSupport()) {
+    try {
+      return await analyzeHealthDataWebGPU(context, history);
+    } catch (err) {
+      console.warn("WebGPU analysis failed, falling back to Ollama API:", err);
+      // Fall through to Ollama
+    }
+  }
+
   const analyzerSystemPrompt = [
     "You are a clinical analysis engine working alongside Nora, a menstrual health tracking app.",
     "Your job is to read the user's current physical state and their recent chat history, then extract key metrics and produce a clinical triage summary.",

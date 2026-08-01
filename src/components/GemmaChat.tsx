@@ -29,8 +29,7 @@ import {
   clearChatMessages,
   type ChatMessage,
 } from "@/lib/gemma";
-import { GEMMA_MODEL } from "@/lib/ollama";
-import { useOllamaStatus } from "@/hooks/useOllamaStatus";
+import { useModelStatus } from "@/hooks/useModelStatus";
 import { avatarById } from "@/lib/avatars";
 import { canSpeak, speakText, stopSpeaking } from "@/lib/speech";
 import { cn } from "@/lib/utils";
@@ -148,15 +147,28 @@ function TypingDots() {
 function StatusBadge({
   status,
   modelAvailable,
+  isWebGPU,
+  progressText,
 }: {
-  status: "connected" | "disconnected" | "checking";
+  status: "connected" | "disconnected" | "checking" | "loading" | "unsupported";
   modelAvailable: boolean;
+  isWebGPU?: boolean;
+  progressText?: string;
 }) {
   if (status === "checking") {
     return (
       <span className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
         <Loader2 className="h-3 w-3 animate-spin" />
-        Checking…
+        {progressText || "Checking…"}
+      </span>
+    );
+  }
+
+  if (status === "loading") {
+    return (
+      <span className="flex items-center gap-1.5 text-[11px] font-semibold text-primary">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        {progressText || "Downloading AI..."}
       </span>
     );
   }
@@ -172,8 +184,8 @@ function StatusBadge({
 
   return (
     <span className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600">
-      <Wifi className="h-3 w-3" />
-      {modelAvailable ? "Connected" : "Model missing"}
+      <Sparkles className="h-3 w-3" />
+      {isWebGPU ? "WebGPU Ready" : (modelAvailable ? "Connected" : "Model missing")}
     </span>
   );
 }
@@ -184,9 +196,9 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
   const {
     status: ollamaStatus,
     modelAvailable,
-    targetModel,
-    recheck,
-  } = useOllamaStatus();
+    progressText,
+    isWebGPU,
+  } = useModelStatus();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -306,10 +318,8 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") return;
       setError(
-        "I couldn't reach the Gemma model. Is Ollama running on this machine?",
+        "I couldn't reach the model. Please check your connection or Ollama server.",
       );
-      // Trigger a recheck of Ollama status
-      void recheck();
       console.error(err);
     } finally {
       abortRef.current = null;
@@ -457,17 +467,25 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
             Ollama is not reachable
           </p>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Nora chats through local <strong>{GEMMA_MODEL}</strong>. Start Ollama, then:
+            We detected WebGPU isn't supported, and we cannot reach your local Ollama fallback.
           </p>
-          <code className="mt-1.5 block rounded-lg bg-foreground/5 px-3 py-2 text-[11px] text-foreground">
-            ollama serve && ollama run {GEMMA_MODEL}
-          </code>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <a
+              href="https://ollama.com/download"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Download Ollama
+            </a>
+          </div>
           <button
             type="button"
-            onClick={() => void recheck()}
-            className="mt-2 text-[11px] font-bold text-destructive underline"
+            onClick={() => window.location.reload()}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl phase-gradient py-3.5 text-sm font-bold text-primary-foreground"
           >
-            Recheck connection
+            <RotateCcw className="h-4 w-4" />
+            Reload Page to Retry
           </button>
         </div>
       ) : ollamaStatus === "connected" && !modelAvailable ? (
@@ -476,22 +494,22 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
             Model not found
           </p>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Ollama is running but <strong>{targetModel || GEMMA_MODEL}</strong> isn’t available yet. Pull it:
+            Ollama is running but <strong>{isWebGPU ? "WebGPU Engine" : "Local Model"}</strong> isn’t available yet. Pull it:
           </p>
           <code className="mt-1.5 block rounded-lg bg-foreground/5 px-3 py-2 text-[11px] text-foreground">
-            ollama pull {GEMMA_MODEL}
+            {isWebGPU ? "WebGPU Engine" : "Local Model Fallback"}
           </code>
           <button
             type="button"
-            onClick={() => void recheck()}
+            onClick={() => window.location.reload()}
             className="mt-2 text-[11px] font-bold text-amber-800 underline"
           >
-            Recheck models
+            Reload Page to Retry
           </button>
         </div>
       ) : (
         <p className="mt-2 shrink-0 text-xs text-muted-foreground">
-          Connected to <strong>{GEMMA_MODEL}</strong> on your machine — messages stream from Ollama.
+          Connected to <strong>{isWebGPU ? "WebGPU Engine" : "Local Ollama"}</strong> — messages stream directly.
         </p>
       )}
 
@@ -561,6 +579,7 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
                   <button
                     type="button"
                     onClick={() => playAssistantVoice(m.content, i)}
+                    disabled={streaming || speaking}
                     className="mt-2 inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[11px] font-bold text-accent-foreground"
                   >
                     <Volume2 className="h-3 w-3" />
