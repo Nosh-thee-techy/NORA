@@ -1,2 +1,2 @@
-import { createAPIFileRoute } from "@tanstack/react-start/api";
-console.log(createAPIFileRoute);
+import { createFileRoute } from "@tanstack/react-router";
+console.log(createFileRoute);
