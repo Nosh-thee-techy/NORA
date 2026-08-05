@@ -20,7 +20,7 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
+          if (cacheName !== CACHE_NAME && !cacheName.includes("webllm")) {
             return caches.delete(cacheName);
           }
         })
