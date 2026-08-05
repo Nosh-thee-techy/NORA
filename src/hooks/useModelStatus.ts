@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { hasWebGPUSupport, initWebGPUEngine } from "@/lib/webgpu-llm";
 import { OLLAMA_STATUS_ENDPOINT } from "@/lib/ollama";
+import { getOllamaStatus } from "@/server/api/ollama-status";
 
 export type ModelStatus = {
   status: "connected" | "disconnected" | "loading" | "unsupported";
@@ -60,9 +61,10 @@ export function useModelStatus() {
 
       // Ollama fallback
       try {
-        const res = await fetch(OLLAMA_STATUS_ENDPOINT);
-        if (!res.ok) throw new Error("Ollama not reachable");
-        const data = await res.json();
+        const data = await getOllamaStatus();
+        if (data.status === "disconnected") {
+          throw new Error(data.error || "Ollama not reachable");
+        }
         
         if (mounted) {
           setStatus({

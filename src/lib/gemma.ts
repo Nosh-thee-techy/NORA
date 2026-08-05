@@ -1,6 +1,7 @@
 export { GEMMA_ENDPOINT, GEMMA_MODEL } from "@/lib/ollama";
 import { GEMMA_ENDPOINT, GEMMA_MODEL } from "@/lib/ollama";
 import { hasWebGPUSupport, streamWebGPUChat, analyzeHealthDataWebGPU } from "@/lib/webgpu-llm";
+import { proxyChat } from "@/server/api/chat";
 
 export type ChatRole = "user" | "assistant" | "system";
 
@@ -56,15 +57,17 @@ export async function streamGemmaChat(
     }
   }
 
-  const res = await fetch(GEMMA_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+  const res = await proxyChat({
+    data: {
       model: GEMMA_MODEL,
       messages,
       stream: true,
-      options: { temperature: 0.7 },
-    }),
+      options: {
+        num_ctx: 4096,
+        num_predict: 512,
+        temperature: 0.7,
+      },
+    },
     ...(signal ? { signal } : {}),
   });
 
