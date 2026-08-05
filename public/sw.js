@@ -40,6 +40,11 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Ignore non-HTTP/HTTPS schemes (e.g., chrome-extension://, moz-extension://, data:)
+  if (!url.protocol.startsWith('http')) {
+    return; 
+  }
+
   event.respondWith(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.match(event.request).then((cachedResponse) => {
