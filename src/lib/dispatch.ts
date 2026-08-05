@@ -6,12 +6,12 @@ export type CareContact = {
   emergencyContact: string;
 };
 
-export function digitsOnly(value: string): string {
+function digitsOnly(value: string): string {
   return value.replace(/\D/g, "");
 }
 
 /** E.164-ish digits for wa.me (country code + number, no +). */
-export function resolveWhatsAppDigits(contact: CareContact): string | null {
+function resolveWhatsAppDigits(contact: CareContact): string | null {
   const fromWhatsApp = `${digitsOnly(contact.whatsappCountry)}${digitsOnly(contact.whatsappNumber)}`;
   if (fromWhatsApp.length >= 8) return fromWhatsApp;
   const emergency = digitsOnly(contact.emergencyContact);
@@ -19,7 +19,7 @@ export function resolveWhatsAppDigits(contact: CareContact): string | null {
   return null;
 }
 
-export function resolveSmsNumber(contact: CareContact): string | null {
+function resolveSmsNumber(contact: CareContact): string | null {
   const emergency = contact.emergencyContact.trim();
   if (emergency) return emergency.replace(/[^\d+]/g, "");
   const wa = resolveWhatsAppDigits(contact);
