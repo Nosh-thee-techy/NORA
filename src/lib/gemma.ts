@@ -1,5 +1,6 @@
 export { GEMMA_ENDPOINT, GEMMA_MODEL } from "@/lib/ollama";
 import { GEMMA_ENDPOINT, GEMMA_MODEL } from "@/lib/ollama";
+import { windowHistory, loadMemorySummary } from "@/lib/chat-memory";
 
 export type ChatRole = "user" | "assistant" | "system";
 
@@ -46,12 +47,19 @@ export async function streamGemmaChat(
   onChunk: (text: string) => void,
   signal?: AbortSignal,
 ): Promise<void> {
+  // Window history to fit within context budget — summarises old messages
+  const systemMsg = messages.find((m) => m.role === "system");
+  const { messages: windowed } = await windowHistory(messages);
+  const windowedMessages = systemMsg
+    ? [systemMsg, ...windowed]
+    : windowed;
+
   const res = await fetch(GEMMA_ENDPOINT, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       model: GEMMA_MODEL,
-      messages,
+      messages: windowedMessages,
       stream: true,
       options: { temperature: 0.7 },
     }),
@@ -163,9 +171,20 @@ export async function analyzeHealthData(
     content: "Please generate a clinical summary and screening signal JSON based on my data and our conversation history.",
   };
 
+  // Window history to fit within context budget — old messages become a summary
+  const { messages: windowedHistory } = await windowHistory(history);
+
+  // If there's a persisted rolling summary, inject it so the analyser has
+  // access to information from conversations that were already compressed.
+  const memorySummary = loadMemorySummary();
+  const memoryContext: ChatMessage[] = memorySummary
+    ? [{ role: "assistant", content: `[Memory from earlier conversations]\n${memorySummary}` }]
+    : [];
+
   const requestMessages = [
     { role: "system", content: analyzerSystemPrompt },
-    ...history.filter((m) => m.role !== "system"),
+    ...memoryContext,
+    ...windowedHistory,
     promptMessage,
   ];
 

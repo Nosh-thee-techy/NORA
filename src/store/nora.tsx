@@ -95,7 +95,7 @@ const SYMPTOM_MAP: Record<string, SymptomId> = {
   "digestive-pain": "nausea",
 };
 
-export function mapProfileSymptoms(ids: string[]): SymptomId[] {
+function mapProfileSymptoms(ids: string[]): SymptomId[] {
   const mapped = ids.map((id) => SYMPTOM_MAP[id]).filter(Boolean) as SymptomId[];
   return Array.from(new Set(mapped));
 }
@@ -110,7 +110,7 @@ function withRisk(state: NoraState): NoraState {
 }
 
 /** Require a real companion choice + period date before skipping onboarding. */
-export function isOnboardingComplete(
+function isOnboardingComplete(
   onboarded: boolean | undefined,
   profile: OnboardingProfile,
 ): boolean {

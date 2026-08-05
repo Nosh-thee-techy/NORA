@@ -143,7 +143,7 @@ export function currentMonthKey(d = new Date()): string {
 }
 
 /** Shift a yyyy-MM key by `delta` calendar months. */
-export function shiftMonthKey(month: string, delta: number): string {
+function shiftMonthKey(month: string, delta: number): string {
   const [yRaw, mRaw] = month.split("-");
   const y = Number(yRaw);
   const m = Number(mRaw);
@@ -152,7 +152,7 @@ export function shiftMonthKey(month: string, delta: number): string {
 }
 
 /** A month counts as fully credited for the resilience path. */
-export function isHighRiskMonth(log: MonthLog | undefined): boolean {
+function isHighRiskMonth(log: MonthLog | undefined): boolean {
   if (!log) return false;
   return log.peakPain >= 7 && log.endoBellyDays >= 3 && log.missedFunction;
 }

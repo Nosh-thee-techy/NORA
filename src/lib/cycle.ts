@@ -1,7 +1,7 @@
 export type Phase = "menstrual" | "follicular" | "ovulation" | "luteal";
 
-export const CYCLE_LENGTH = 28;
-export const DEFAULT_PERIOD_LENGTH = 5;
+const CYCLE_LENGTH = 28;
+const DEFAULT_PERIOD_LENGTH = 5;
 
 export const PHASE_META: Record<
   Phase,
@@ -46,7 +46,7 @@ export function resolvePeriodLength(periodLength: number | null | undefined): nu
 }
 
 /** Parse a yyyy-MM-dd profile date as local midnight. */
-export function parseProfileDate(iso: string | null | undefined): Date | null {
+function parseProfileDate(iso: string | null | undefined): Date | null {
   if (!iso) return null;
   const d = new Date(`${iso}T00:00:00`);
   return Number.isNaN(d.getTime()) ? null : d;
@@ -58,7 +58,7 @@ export function startOfDay(d: Date): Date {
   return x;
 }
 
-export function addDays(d: Date, days: number): Date {
+function addDays(d: Date, days: number): Date {
   const x = new Date(d);
   x.setDate(x.getDate() + days);
   return x;
@@ -106,7 +106,7 @@ export function phaseForDay(
   return "luteal";
 }
 
-export type CycleDayCell = {
+type CycleDayCell = {
   date: Date;
   cycleDay: number;
   phase: Phase;

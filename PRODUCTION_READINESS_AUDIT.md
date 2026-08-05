@@ -122,7 +122,7 @@ There's a small disclaimer on the report page ("NORA is not a diagnostic device"
 
 The entire AI feature (chat, report analysis) requires a **local Ollama instance**:
 
-- The Vite config targets Cloudflare (`@lovable.dev/vite-tanstack-config` uses Cloudflare by default), but Cloudflare Workers/Pages can't run Ollama.
+- The Vite config uses Cloudflare as a default deployment target, but Cloudflare Workers/Pages can't run Ollama.
 - For real deployment you'd need either:
   - A managed LLM API (Gemini API, OpenAI, etc.)
   - A self-hosted GPU server running Ollama

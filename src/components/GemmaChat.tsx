@@ -29,6 +29,7 @@ import {
   clearChatMessages,
   type ChatMessage,
 } from "@/lib/gemma";
+import { shouldSummarise, windowHistory } from "@/lib/chat-memory";
 import { GEMMA_MODEL } from "@/lib/ollama";
 import { useOllamaStatus } from "@/hooks/useOllamaStatus";
 import { avatarById } from "@/lib/avatars";
@@ -219,6 +220,17 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, streaming, speaking]);
 
+  // Background summarisation: if chat gets too long, compress old messages
+  useEffect(() => {
+    if (hydrated && messages.length > 0 && !streaming && shouldSummarise(messages)) {
+      windowHistory(messages).then((res) => {
+        if (res.didSummarise) {
+          setMessages(res.messages);
+        }
+      }).catch(console.error);
+    }
+  }, [messages, streaming, hydrated]);
+
   // Cleanup abort + speech on unmount
   useEffect(
     () => () => {
@@ -276,7 +288,12 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
       companion.name,
     );
     const userMessage: ChatMessage = { role: "user", content: trimmed };
-    const history = messages.length ? messages : [{ role: "system" as const, content: system }];
+    // ALWAYS inject the live system prompt for the model
+    const requestMessages: ChatMessage[] = [
+      { role: "system", content: system },
+      ...messages,
+      userMessage,
+    ];
 
     setMessages((m) => [...m, userMessage]);
     setStreaming(true);
@@ -287,7 +304,7 @@ export function GemmaChat({ layout = "page" }: { layout?: "page" | "card" }) {
 
     try {
       await streamGemmaChat(
-        [...history, userMessage],
+        requestMessages,
         (chunk) => {
           acc += chunk;
           setMessages((m) => {
