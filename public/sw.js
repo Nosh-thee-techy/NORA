@@ -49,10 +49,16 @@ self.addEventListener("fetch", (event) => {
     caches.open(CACHE_NAME).then((cache) => {
       return cache.match(event.request).then((cachedResponse) => {
         const fetchPromise = fetch(event.request).then((networkResponse) => {
-          // Update cache with new response
-          if (networkResponse.ok) {
-            cache.put(event.request, networkResponse.clone());
+          // Ensure valid response before putting into cache
+          if (
+            !networkResponse ||
+            networkResponse.status !== 200 ||
+            networkResponse.type !== 'basic'
+          ) {
+            return networkResponse;
           }
+          
+          cache.put(event.request, networkResponse.clone());
           return networkResponse;
         }).catch(() => {
           // Offline fallback is handled implicitly by returning cachedResponse below
