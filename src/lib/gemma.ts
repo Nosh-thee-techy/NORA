@@ -106,6 +106,10 @@ export type ReportData = {
     nsaidEfficacy: string;
     avgPeakPain: string;
     cyclesLogged: string;
+    painCyclicality: string;
+    giUrinaryInvolvement: string;
+    functionalImpact: string;
+    compositeRiskScore: string;
   };
   timeline: {
     month: string;
@@ -150,10 +154,19 @@ export async function analyzeHealthData(
   }
 
   const analyzerSystemPrompt = [
-    "You are a clinical analysis engine working alongside Nora, a menstrual health tracking app.",
-    "Your job is to read the user's current physical state and their recent chat history, then extract key metrics and produce a clinical triage summary.",
-    "Identify any patterns consistent with endometriosis or other reproductive health conditions (e.g., cyclical deep pelvic pain, radiating leg pain, endo belly).",
-    "Do NOT diagnose the user—frame it as a 'screening signal' or 'pattern analysis' to share with their doctor.",
+    "You are a clinical analysis engine working alongside Nora, a menstrual health tracking app that monitors endometriosis screening variables.",
+    "Your job is to read the user's current physical state, their endometriosis tracking data, and their recent chat history, then extract key metrics and produce a clinical triage summary.",
+    "",
+    "CLINICAL VARIABLES TO ANALYZE:",
+    "- Pain cyclicality: Does pain worsen in luteal→menstrual phases and ease in follicular→ovulation? This is the hallmark of endometriosis.",
+    "- Multi-organ involvement: Look for the deep endo triad — dyschezia (painful bowel), dysuria (painful urination), and radiating back/leg pain occurring together.",
+    "- Progressive worsening: Is pain severity increasing month-over-month?",
+    "- Pain quality patterns: Stabbing/burning pain suggests nerve involvement; cramping/pressure is more typical of superficial endo.",
+    "- GI/urinary symptoms: Bowel changes (constipation, diarrhea), bloating (endo belly), and urinary frequency/urgency.",
+    "- Functional impact: Days missed work/school, reduced activity, poor sleep, fatigue levels.",
+    "- Medication response: NSAID efficacy, hormonal therapy effects — poor NSAID response with cyclical pain is a strong endo signal.",
+    "",
+    "Do NOT diagnose the user — frame findings as a 'screening signal' or 'pattern analysis' to share with their doctor.",
     "",
     "You MUST respond ONLY with a strict JSON object matching this schema:",
     "{",
@@ -161,22 +174,26 @@ export async function analyzeHealthData(
     "    \"daysMissed\": \"string (e.g. '3')\",",
     "    \"nsaidEfficacy\": \"string (e.g. 'Low' or 'High')\",",
     "    \"avgPeakPain\": \"string (e.g. '8.2 / 10')\",",
-    "    \"cyclesLogged\": \"string (e.g. '3 months')\"",
+    "    \"cyclesLogged\": \"string (e.g. '3 months')\",",
+    "    \"painCyclicality\": \"string (e.g. 'Strong cyclical pattern' or 'Weak' or 'None detected')\",",
+    "    \"giUrinaryInvolvement\": \"string (e.g. 'Present — bowel + bladder' or 'Absent')\",",
+    "    \"functionalImpact\": \"string (e.g. 'Severe' or 'Moderate' or 'Mild')\",",
+    "    \"compositeRiskScore\": \"string (e.g. '72/100 (High)')\"",
     "  },",
     "  \"timeline\": [",
     "    {",
     "      \"month\": \"string (e.g. 'Month 1')\",",
     "      \"peak\": number (1-10),",
     "      \"flow\": \"string (e.g. 'Heavy (5 days)')\",",
-    "      \"flags\": \"string (e.g. 'Bowel pain')\"",
+    "      \"flags\": \"string (e.g. 'Deep endo triad, progressive worsening')\"",
     "    }",
     "  ],",
-    "  \"analysis\": \"string (1-2 paragraph clinical triage summary)\"",
+    "  \"analysis\": \"string (2-3 paragraph clinical triage summary covering: pain pattern assessment, multi-organ screening, functional impact, and clinical recommendation)\"",
     "}",
     "",
-    "Extract or estimate these values reasonably based on the user's chat history and current context.",
+    "Extract or estimate these values from the endometriosis tracking data and chat history provided below.",
     "",
-    "--- USER STATE ---",
+    "--- USER STATE & ENDO TRACKING DATA ---",
     context,
   ].join("\n");
 

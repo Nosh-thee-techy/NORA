@@ -199,12 +199,27 @@ function formatShort(d: Date): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+export type SymptomCategory = "pain" | "gi-urinary" | "general";
+
 export const SYMPTOMS = [
-  { id: "cramps", label: "Bad Cramps" },
-  { id: "endo-belly", label: "Endo Belly" },
-  { id: "leg-pain", label: "Radiating Leg Pain" },
-  { id: "heavy-flow", label: "Heavy Flow" },
-  { id: "nausea", label: "Nausea" },
+  // Pain
+  { id: "cramps", label: "Bad Cramps", category: "pain" as SymptomCategory },
+  { id: "leg-pain", label: "Radiating Leg Pain", category: "pain" as SymptomCategory },
+  { id: "back-pain", label: "Back Pain", category: "pain" as SymptomCategory },
+  { id: "painful-intercourse", label: "Painful Intercourse", category: "pain" as SymptomCategory },
+  // GI & Urinary
+  { id: "endo-belly", label: "Endo Belly", category: "gi-urinary" as SymptomCategory },
+  { id: "painful-bowel", label: "Painful Bowel", category: "gi-urinary" as SymptomCategory },
+  { id: "painful-urination", label: "Painful Urination", category: "gi-urinary" as SymptomCategory },
+  { id: "nausea", label: "Nausea", category: "gi-urinary" as SymptomCategory },
+  // General
+  { id: "heavy-flow", label: "Heavy Flow", category: "general" as SymptomCategory },
+  { id: "clotting", label: "Clotting", category: "general" as SymptomCategory },
+  { id: "spotting", label: "Spotting", category: "general" as SymptomCategory },
+  { id: "fatigue", label: "Fatigue", category: "general" as SymptomCategory },
+  { id: "brain-fog", label: "Brain Fog", category: "general" as SymptomCategory },
+  { id: "mood-low", label: "Low Mood", category: "general" as SymptomCategory },
 ] as const;
 
 export type SymptomId = (typeof SYMPTOMS)[number]["id"];
+

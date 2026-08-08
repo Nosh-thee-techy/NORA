@@ -77,6 +77,16 @@ export type MonthLog = {
   endoBellyDays: number;
   missedFunction: boolean;
   heavyFlow: boolean;
+  /** Phase-level pain averages (populated from daily logs when available) */
+  avgPainByPhase?: { menstrual: number; follicular: number; ovulation: number; luteal: number };
+  /** Total days missed work/school in the month */
+  totalDaysMissed?: number;
+  /** Average fatigue severity (0–10) */
+  avgFatigue?: number;
+  /** Number of days with GI symptoms */
+  giSymptomDays?: number;
+  /** Number of days medication was taken */
+  medicationDays?: number;
 };
 
 export function evaluateEndoRisk(logs: MonthLog[]): {
@@ -96,7 +106,13 @@ export function evaluateEndoRisk(logs: MonthLog[]): {
   const highPainMonths = recent.filter((m) => m.peakPain >= 7).length;
   const endoPattern = recent.filter((m) => m.endoBellyDays >= 3).length;
   const functionImpact = recent.filter((m) => m.missedFunction).length;
-  const highRisk = highPainMonths >= 2 && (endoPattern >= 2 || functionImpact >= 2);
+  const giInvolvement = recent.filter((m) => (m.giSymptomDays ?? 0) >= 3).length;
+  const highFatigue = recent.filter((m) => (m.avgFatigue ?? 0) >= 5).length;
+
+  const highRisk =
+    (highPainMonths >= 2 && (endoPattern >= 2 || functionImpact >= 2)) ||
+    (highPainMonths >= 2 && giInvolvement >= 2) ||
+    (highPainMonths >= 3 && highFatigue >= 2);
 
   return {
     highRisk,

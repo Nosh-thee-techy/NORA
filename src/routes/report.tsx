@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Download, Activity, CalendarX, PillBottle, TrendingUp, Sparkles, Loader2 } from "lucide-react";
+import { Download, Activity, CalendarX, PillBottle, TrendingUp, Sparkles, Loader2, ShieldAlert, Stethoscope, Brain, HeartPulse } from "lucide-react";
 import { TopNav } from "@/components/TopNav";
 import { SosScreen } from "@/components/SosScreen";
 import { useNora } from "@/store/nora";
 import { SYMPTOMS, PHASE_META } from "@/lib/cycle";
 import { analyzeHealthData, loadAnalysis, saveAnalysis, loadChatMessages, type ReportData } from "@/lib/gemma";
+import { buildEndoContext } from "@/lib/endometriosis";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/report")({
@@ -29,7 +30,7 @@ export const Route = createFileRoute("/report")({
 });
 
 function ReportPage() {
-  const { phase, painPoints, symptoms, cycleDay, energy } = useNora();
+  const { phase, painPoints, symptoms, cycleDay, energy, endoDailyLogs, endoRiskScore, endoRiskCategory } = useNora();
   const [sos, setSos] = useState(false);
   
   const [analysis, setAnalysis] = useState<ReportData | null>(null);
@@ -49,17 +50,21 @@ function ReportPage() {
       const labels = symptoms.length
         ? symptoms.map((id) => SYMPTOMS.find((s) => s.id === id)?.label ?? id).join(", ")
         : "none";
-      const phaseInfo = PHASE_META[phase];
+
+      // Build rich endo context from daily logs
+      const context = buildEndoContext(endoDailyLogs, {
+        cycleDay,
+        phase,
+        energy,
+        currentSymptoms: labels.split(", "),
+      });
+
+      // Append pain points if any
       const painContext = painPoints.length > 0
-        ? `Mapped pain points: ${painPoints.map((p) => `${p.region} (intensity ${p.intensity}/10, depth ${p.depth})`).join("; ")}.`
-        : "No mapped pain points.";
+        ? `\n\nMAPPED PAIN POINTS: ${painPoints.map((p) => `${p.region} (intensity ${p.intensity}/10, depth ${p.depth})`).join("; ")}.`
+        : "";
 
-      const context = [
-        `Current context — cycle day ${cycleDay} (${phaseInfo.label} phase), energy ${energy}%, logged symptoms: ${labels}.`,
-        painContext
-      ].join("\n");
-
-      const result = await analyzeHealthData(context, history);
+      const result = await analyzeHealthData(context + painContext, history);
       setAnalysis(result);
       saveAnalysis(result);
       toast.success("Analysis generated successfully");
@@ -77,12 +82,20 @@ function ReportPage() {
         { icon: PillBottle, label: "NSAID Efficacy", value: analysis.metrics.nsaidEfficacy },
         { icon: Activity, label: "Avg. Peak Pain", value: analysis.metrics.avgPeakPain },
         { icon: TrendingUp, label: "Cycles Logged", value: analysis.metrics.cyclesLogged },
+        { icon: HeartPulse, label: "Pain Cyclicality", value: analysis.metrics.painCyclicality ?? "—" },
+        { icon: Stethoscope, label: "GI/Urinary", value: analysis.metrics.giUrinaryInvolvement ?? "—" },
+        { icon: Brain, label: "Functional Impact", value: analysis.metrics.functionalImpact ?? "—" },
+        { icon: ShieldAlert, label: "Endo Risk Score", value: analysis.metrics.compositeRiskScore ?? `${endoRiskScore}/100 (${endoRiskCategory})` },
       ]
     : [
         { icon: CalendarX, label: "Days Missed Work/School", value: "—" },
         { icon: PillBottle, label: "NSAID Efficacy", value: "—" },
         { icon: Activity, label: "Avg. Peak Pain", value: "—" },
         { icon: TrendingUp, label: "Cycles Logged", value: "—" },
+        { icon: HeartPulse, label: "Pain Cyclicality", value: "—" },
+        { icon: Stethoscope, label: "GI/Urinary", value: "—" },
+        { icon: Brain, label: "Functional Impact", value: "—" },
+        { icon: ShieldAlert, label: "Endo Risk Score", value: endoDailyLogs.length >= 7 ? `${endoRiskScore}/100 (${endoRiskCategory})` : "—" },
       ];
 
   const displayTimeline = analysis?.timeline ?? [];

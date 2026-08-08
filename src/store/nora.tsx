@@ -23,6 +23,13 @@ import {
   upsertMonthLog,
   type MonthLog,
 } from "@/lib/forecast";
+import {
+  computeEndoRiskScore,
+  todayKey,
+  upsertDailyLog,
+  type EndoDailyLog,
+  type MedicationEntry,
+} from "@/lib/endometriosis";
 
 export type PainPoint = {
   id: string;
@@ -56,10 +63,13 @@ type NoraState = {
   recoveryMode: boolean;
   monthLogs: MonthLog[];
   resilienceUnlocked: boolean;
+  endoDailyLogs: EndoDailyLog[];
+  endoRiskScore: number;
+  medications: MedicationEntry[];
 };
 
-const STORAGE_KEY = "nora-bloom-state-v3";
-const LEGACY_KEYS = ["nora-bloom-state-v2", "nora-bloom-state-v1"] as const;
+const STORAGE_KEY = "nora-bloom-state-v4";
+const LEGACY_KEYS = ["nora-bloom-state-v3", "nora-bloom-state-v2", "nora-bloom-state-v1"] as const;
 
 export const DEFAULT_PROFILE: OnboardingProfile = {
   lastPeriodStart: null,
@@ -84,6 +94,9 @@ const DEFAULT_STATE: NoraState = {
   recoveryMode: false,
   monthLogs: [],
   resilienceUnlocked: false,
+  endoDailyLogs: [],
+  endoRiskScore: 0,
+  medications: [],
 };
 
 const SYMPTOM_MAP: Record<string, SymptomId> = {
@@ -92,7 +105,8 @@ const SYMPTOM_MAP: Record<string, SymptomId> = {
   bloating: "endo-belly",
   "radiating-pain": "leg-pain",
   "heavy-flow": "heavy-flow",
-  "digestive-pain": "nausea",
+  "digestive-pain": "painful-bowel",
+  "missed-work": "fatigue",
 };
 
 function mapProfileSymptoms(ids: string[]): SymptomId[] {
@@ -140,6 +154,9 @@ function normalizeState(parsed: Partial<NoraState>): NoraState {
     resilienceUnlocked: !!parsed.resilienceUnlocked,
     painPoints: Array.isArray(parsed.painPoints) ? parsed.painPoints : [],
     symptoms: Array.isArray(parsed.symptoms) ? parsed.symptoms : [],
+    endoDailyLogs: Array.isArray(parsed.endoDailyLogs) ? parsed.endoDailyLogs : [],
+    endoRiskScore: typeof parsed.endoRiskScore === "number" ? parsed.endoRiskScore : 0,
+    medications: Array.isArray(parsed.medications) ? parsed.medications : [],
     onboarded: false,
   };
 
@@ -181,8 +198,11 @@ type Ctx = NoraState & {
   logTodaySignals: () => void;
   /** Credit the next month toward the 3-month resilience path; returns credited month key */
   recordPatternMonth: () => string;
+  logEndoDaily: (patch: Partial<EndoDailyLog>) => void;
+  setMedications: (meds: MedicationEntry[]) => void;
   endoRiskReason: string;
   patternMonthsLogged: number;
+  endoRiskCategory: string;
   hydrated: boolean;
 };
 
@@ -316,16 +336,55 @@ export function NoraProvider({ children }: { children: ReactNode }) {
         missedFunction: peakPain >= 8,
       };
       const existing = s.monthLogs.find((m) => m.month === patch.month);
+
+      let nextMonthLogs = s.monthLogs;
       if (
-        existing &&
-        existing.peakPain >= patch.peakPain &&
-        existing.endoBellyDays >= patch.endoBellyDays &&
-        existing.heavyFlow === (existing.heavyFlow || patch.heavyFlow) &&
-        existing.missedFunction === (existing.missedFunction || patch.missedFunction)
+        !existing ||
+        existing.peakPain < patch.peakPain ||
+        existing.endoBellyDays < patch.endoBellyDays ||
+        existing.heavyFlow !== (existing.heavyFlow || patch.heavyFlow) ||
+        existing.missedFunction !== (existing.missedFunction || patch.missedFunction)
       ) {
-        return s;
+        nextMonthLogs = upsertMonthLog(s.monthLogs, patch);
       }
-      return withRisk({ ...s, monthLogs: upsertMonthLog(s.monthLogs, patch) });
+
+      // Also populate an EndoDailyLog from current symptom/pain state
+      const currentPhase = phaseForDay(s.cycleDay, {
+        cycleLength: s.profile.cycleLength,
+        periodLength: s.profile.periodLength,
+      });
+      const endoPatch: Partial<EndoDailyLog> & { date: string; cycleDay: number; phase: Phase } = {
+        date: todayKey(),
+        cycleDay: s.cycleDay,
+        phase: currentPhase,
+        painOverall: peakPain,
+        painDysmenorrhea: s.symptoms.includes("cramps") ? Math.max(peakPain, 5) : 0,
+        painDyschezia: s.symptoms.includes("painful-bowel") ? 5 : 0,
+        painDysuria: s.symptoms.includes("painful-urination") ? 5 : 0,
+        painBackRadiating: s.symptoms.includes("leg-pain") || s.symptoms.includes("back-pain") ? Math.max(peakPain, 5) : 0,
+        bloatingSeverity: s.symptoms.includes("endo-belly") ? 6 : 0,
+        fatigueSeverity: s.symptoms.includes("fatigue") ? 6 : 0,
+        brainFog: s.symptoms.includes("brain-fog"),
+        clotting: s.symptoms.includes("clotting"),
+        intermenstrualBleeding: s.symptoms.includes("spotting"),
+        missedWork: peakPain >= 8,
+        reducedActivity: peakPain >= 6,
+        energyLevel: s.energy,
+        mood: s.symptoms.includes("mood-low") ? "low" : "okay",
+        flowIntensity: s.symptoms.includes("heavy-flow") ? "heavy" : "none",
+        medications: s.medications,
+        bowelChanges: s.symptoms.includes("painful-bowel") ? ["painful-gas"] : [],
+        urinarySymptoms: s.symptoms.includes("painful-urination") ? ["pain"] : [],
+      };
+      const nextEndoLogs = upsertDailyLog(s.endoDailyLogs, endoPatch);
+      const nextRisk = computeEndoRiskScore(nextEndoLogs);
+
+      return withRisk({
+        ...s,
+        monthLogs: nextMonthLogs,
+        endoDailyLogs: nextEndoLogs,
+        endoRiskScore: nextRisk.score,
+      });
     });
   }, []);
 
@@ -352,6 +411,30 @@ export function NoraProvider({ children }: { children: ReactNode }) {
     return credited;
   }, []);
 
+  const logEndoDaily = useCallback((patch: Partial<EndoDailyLog>) => {
+    setState((s) => {
+      const currentPhase = phaseForDay(s.cycleDay, {
+        cycleLength: s.profile.cycleLength,
+        periodLength: s.profile.periodLength,
+      });
+      const fullPatch = {
+        date: todayKey(),
+        cycleDay: s.cycleDay,
+        phase: currentPhase,
+        ...patch,
+      };
+      const nextLogs = upsertDailyLog(s.endoDailyLogs, fullPatch);
+      const nextRisk = computeEndoRiskScore(nextLogs);
+      return { ...s, endoDailyLogs: nextLogs, endoRiskScore: nextRisk.score };
+    });
+  }, []);
+
+  const setMedications = useCallback((meds: MedicationEntry[]) => {
+    setState((s) => ({ ...s, medications: meds }));
+  }, []);
+
+  const endoRiskResult = useMemo(() => computeEndoRiskScore(state.endoDailyLogs), [state.endoDailyLogs]);
+
   const value = useMemo<Ctx>(
     () => ({
       ...state,
@@ -372,12 +455,16 @@ export function NoraProvider({ children }: { children: ReactNode }) {
       setRecoveryMode,
       logTodaySignals,
       recordPatternMonth,
+      logEndoDaily,
+      setMedications,
       endoRiskReason: evaluateEndoRisk(state.monthLogs).reason,
       patternMonthsLogged: state.monthLogs.length,
+      endoRiskCategory: endoRiskResult.category,
     }),
     [
       state,
       hydrated,
+      endoRiskResult,
       setCycleDay,
       setEnergy,
       toggleSymptom,
@@ -390,6 +477,8 @@ export function NoraProvider({ children }: { children: ReactNode }) {
       setRecoveryMode,
       logTodaySignals,
       recordPatternMonth,
+      logEndoDaily,
+      setMedications,
     ],
   );
 

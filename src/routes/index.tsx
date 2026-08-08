@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { MessageCircle, Stethoscope, HeartPulse, Sparkles } from "lucide-react";
+import { MessageCircle, Stethoscope, HeartPulse, Sparkles, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { avatarById } from "@/lib/avatars";
 import { Luna } from "@/components/Luna";
@@ -57,6 +57,9 @@ function Dashboard() {
     endoRiskReason,
     patternMonthsLogged,
     monthLogs,
+    endoRiskScore,
+    endoRiskCategory,
+    endoDailyLogs,
   } = useNora();
   const companion = avatarById(profile.avatarId);
   const navigate = useNavigate();
@@ -419,31 +422,43 @@ function Dashboard() {
           )}
         </section>
 
-        {/* Symptom chips */}
+        {/* Symptom chips — grouped by clinical category */}
         <section className="mt-4 rounded-4xl glass-panel p-5">
           <h2 className="text-sm font-bold">Quick symptoms</h2>
           <p className="text-xs text-muted-foreground">
-            Tap to update Nora live — Endo Belly expands her shape.
+            Tap to log — these feed Nora's endometriosis pattern engine.
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {SYMPTOMS.map((s) => {
-              const on = symptoms.includes(s.id);
-              return (
-                <motion.button
-                  key={s.id}
-                  whileTap={{ scale: 0.94 }}
-                  onClick={() => toggleSymptom(s.id)}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-                    on
-                      ? "phase-gradient text-primary-foreground"
-                      : "bg-secondary text-secondary-foreground"
-                  }`}
-                >
-                  {s.label}
-                </motion.button>
-              );
-            })}
-          </div>
+
+          {(["pain", "gi-urinary", "general"] as const).map((cat) => {
+            const catSymptoms = SYMPTOMS.filter((s) => s.category === cat);
+            const catLabel = cat === "pain" ? "Pain" : cat === "gi-urinary" ? "GI & Urinary" : "General";
+            return (
+              <div key={cat} className="mt-3">
+                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                  {catLabel}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {catSymptoms.map((s) => {
+                    const on = symptoms.includes(s.id);
+                    return (
+                      <motion.button
+                        key={s.id}
+                        whileTap={{ scale: 0.94 }}
+                        onClick={() => toggleSymptom(s.id)}
+                        className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                          on
+                            ? "phase-gradient text-primary-foreground"
+                            : "bg-secondary text-secondary-foreground"
+                        }`}
+                      >
+                        {s.label}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
 
           <button
             onClick={() => setMapper(true)}
@@ -458,6 +473,34 @@ function Dashboard() {
             )}
           </button>
         </section>
+
+        {/* Endo screening score */}
+        {endoDailyLogs.length >= 7 && (
+          <section className="mt-4 rounded-3xl glass-panel px-4 py-3">
+            <div className="flex items-center gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-800">
+                <ShieldAlert className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-bold">
+                  Endo Screening Score: {endoRiskScore}/100
+                  <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                    endoRiskCategory === "Very High" || endoRiskCategory === "High"
+                      ? "bg-red-100 text-red-800"
+                      : endoRiskCategory === "Moderate"
+                        ? "bg-amber-100 text-amber-800"
+                        : "bg-green-100 text-green-800"
+                  }`}>
+                    {endoRiskCategory}
+                  </span>
+                </p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  Based on {endoDailyLogs.length} days of tracking. Not a diagnosis.
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="mt-4 flex items-center gap-3 rounded-3xl glass-panel px-4 py-3">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-accent text-accent-foreground">
